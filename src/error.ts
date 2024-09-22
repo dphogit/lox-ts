@@ -1,19 +1,26 @@
 export interface IErrorReporter {
-  hadError: boolean;
+  hasError(): boolean;
+  clearError(): void;
   error(line: number, message: string): void;
 }
 
-class ErrorReporter implements IErrorReporter {
-  hadError = false;
+export class ErrorReporter implements IErrorReporter {
+  private _hasError = false;
+
+  hasError() {
+    return this._hasError;
+  }
+
+  clearError() {
+    this._hasError = false;
+  }
 
   error(line: number, message: string): void {
     this.report(line, "", message);
   }
 
-  report(line: number, where: string, message: string) {
+  private report(line: number, where: string, message: string) {
     console.error(`[line ${line}] Error ${where}: ${message}`);
-    this.hadError = true;
+    this._hasError = true;
   }
 }
-
-export const errorReporter: IErrorReporter = new ErrorReporter();

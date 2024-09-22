@@ -2,11 +2,14 @@ import fs from "node:fs";
 import process from "node:process";
 import readline from "node:readline";
 
-import { errorReporter } from "./error";
+import { ErrorReporter } from "./error";
+import { Scanner } from "./scanner";
 
 // https://man.freebsd.org/cgi/man.cgi?query=sysexits
 const EX_USAGE = 64;
 const EX_DATAERR = 65;
+
+const errorReporter = new ErrorReporter();
 
 function printUsage() {
   console.log();
@@ -16,11 +19,11 @@ function printUsage() {
 }
 
 function run(source: string) {
-  // const scanner = new Scanner(source);
-  // const tokens = scanner.scanTokens();
-  //
-  // // For now, print the tokens until we create a parser
-  // tokens.forEach(console.log);
+  const scanner = new Scanner(source, errorReporter);
+  const tokens = scanner.scanTokens();
+
+  // For now, print the tokens until we create a parser
+  tokens.forEach((token) => console.log(token.toString()));
 }
 
 function runPrompt() {
@@ -37,7 +40,7 @@ function runPrompt() {
       run(line);
     }
 
-    errorReporter.hadError = false;
+    errorReporter.clearError();
 
     // Continuously reprompt
     rl.prompt();
@@ -54,7 +57,7 @@ function runFile(path: string) {
 
     run(data);
 
-    if (errorReporter.hadError) {
+    if (errorReporter.hasError()) {
       process.exitCode = EX_DATAERR;
     }
   });
