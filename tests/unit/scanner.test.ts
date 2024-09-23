@@ -1,20 +1,21 @@
-import { describe, expect, test } from "vitest";
-import { ErrorReporter } from "../../src/error";
+import { beforeEach, describe, expect, test } from "vitest";
+import { ErrorReporter, IErrorReporter } from "../../src/error";
 import { Scanner } from "../../src/scanner";
 import { tokenFactory } from "../../src/token";
 
-const errorReporter = new ErrorReporter();
-
 describe("Scanner class", () => {
+  let errorReporter: IErrorReporter;
+
+  beforeEach(() => {
+    errorReporter = new ErrorReporter();
+  });
+
   test("print hi returns correct tokens", () => {
-    // Arrange
     const source = 'print "Hi!";';
     const scanner = new Scanner(source, errorReporter);
 
-    // Act
     const tokens = scanner.scanTokens();
 
-    // Assert
     expect(tokens).toHaveLength(4);
     expect(tokens).toStrictEqual([
       tokenFactory.createPrint(1),
@@ -22,17 +23,15 @@ describe("Scanner class", () => {
       tokenFactory.createSemiColon(1),
       tokenFactory.createEof(1),
     ]);
+    expect(errorReporter.hasError()).toEqual(false);
   });
 
   test("assign string variable returns correct tokens", () => {
-    // Arrange
     const source = "var pi = 3.14;";
     const scanner = new Scanner(source, errorReporter);
 
-    // Act
     const tokens = scanner.scanTokens();
 
-    // Assert
     expect(tokens).toHaveLength(6);
     expect(tokens).toStrictEqual([
       tokenFactory.createVar(1),
@@ -42,17 +41,15 @@ describe("Scanner class", () => {
       tokenFactory.createSemiColon(1),
       tokenFactory.createEof(1),
     ]);
+    expect(errorReporter.hasError()).toEqual(false);
   });
 
   test("aritmetic expression returns correct tokens", () => {
-    // Arrange
     const source = "1 + 2 - 3 * 4 / 5;";
     const scanner = new Scanner(source, errorReporter);
 
-    // Act
     const tokens = scanner.scanTokens();
 
-    // Assert
     expect(tokens).toHaveLength(11);
     expect(tokens).toStrictEqual([
       tokenFactory.createNumber(1, 1),
@@ -67,17 +64,15 @@ describe("Scanner class", () => {
       tokenFactory.createSemiColon(1),
       tokenFactory.createEof(1),
     ]);
+    expect(errorReporter.hasError()).toEqual(false);
   });
 
   test("multiple lines returns correct tokens", () => {
-    // Arrange
     const source = "var x = 10;\nprint x;\n";
     const scanner = new Scanner(source, errorReporter);
 
-    // Act
     const tokens = scanner.scanTokens();
 
-    // Assert
     expect(tokens).toHaveLength(9);
     expect(tokens).toStrictEqual([
       tokenFactory.createVar(1),
@@ -92,17 +87,72 @@ describe("Scanner class", () => {
 
       tokenFactory.createEof(3),
     ]);
+    expect(errorReporter.hasError()).toEqual(false);
   });
 
-  test("invalid lexeme is reported but continues to scan", () => {
-    // Arrange
+  test("inline comment is ignored", () => {
+    const source = "// Inline comments are ignored";
+    const scanner = new Scanner(source, errorReporter);
+
+    const tokens = scanner.scanTokens();
+
+    expect(tokens).toHaveLength(1);
+    expect(tokens).toStrictEqual([tokenFactory.createEof(1)]);
+    expect(errorReporter.hasError()).toEqual(false);
+  });
+
+  test("block comment is ignored", () => {
+    const source = "/* C Style block comments are ignored */ print 10;";
+    const scanner = new Scanner(source, errorReporter);
+
+    const tokens = scanner.scanTokens();
+
+    expect(tokens).toHaveLength(4);
+    expect(tokens).toStrictEqual([
+      tokenFactory.createPrint(1),
+      tokenFactory.createNumber(10, 1),
+      tokenFactory.createSemiColon(1),
+      tokenFactory.createEof(1),
+    ]);
+    expect(errorReporter.hasError()).toEqual(false);
+  });
+
+  test("unterminated block comment is reported gracefully", () => {
+    const source = "print 10; /*";
+    const scanner = new Scanner(source, errorReporter);
+
+    const tokens = scanner.scanTokens();
+
+    expect(tokens).toHaveLength(4);
+    expect(tokens).toStrictEqual([
+      tokenFactory.createPrint(1),
+      tokenFactory.createNumber(10, 1),
+      tokenFactory.createSemiColon(1),
+      tokenFactory.createEof(1),
+    ]);
+    expect(errorReporter.hasError()).toEqual(true);
+  });
+
+  test("unterminated string is reported gracefully", () => {
+    const source = 'print "';
+    const scanner = new Scanner(source, errorReporter);
+
+    const tokens = scanner.scanTokens();
+
+    expect(tokens).toHaveLength(2);
+    expect(tokens).toStrictEqual([
+      tokenFactory.createPrint(1),
+      tokenFactory.createEof(1),
+    ]);
+    expect(errorReporter.hasError()).toEqual(true);
+  });
+
+  test("invalid lexeme is reported gracefully", () => {
     const source = "# 1;";
     const scanner = new Scanner(source, errorReporter);
 
-    // Act
     const tokens = scanner.scanTokens();
 
-    // Arrange
     expect(tokens).toHaveLength(3);
     expect(tokens).toStrictEqual([
       tokenFactory.createNumber(1, 1),

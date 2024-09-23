@@ -73,10 +73,12 @@ export class Scanner {
         return;
       case "/":
         if (this.match("/")) {
-          // Inline commment - consume until end of line but don't add token
-          while (this.peek() !== "\n" && !this.isAtEnd()) {
-            this.advance();
-          }
+          this.inlineComment();
+          return;
+        }
+
+        if (this.match("*")) {
+          this.blockComment();
           return;
         }
 
@@ -157,6 +159,32 @@ export class Scanner {
       "STRING",
       this.source.substring(this.startIndex + 1, this.currentIndex - 1),
     );
+  }
+
+  private inlineComment() {
+    // Keep consuming the tokens until we reach end of line (or file)
+    while (this.peek() !== "\n" && !this.isAtEnd()) {
+      this.advance();
+    }
+  }
+
+  // No nested block comments to encourage code simplicity.
+  private blockComment() {
+    while (this.peek() !== "*" && this.peekNext() !== "/" && !this.isAtEnd()) {
+      if (this.peek() === "\n") {
+        this.line++;
+      }
+      this.advance();
+    }
+
+    if (this.isAtEnd()) {
+      this.errorReporter.error(this.line, "Unterminated comment.");
+      return;
+    }
+
+    // Consume the closing star and slash
+    this.advance();
+    this.advance();
   }
 
   private match(expected: string) {
