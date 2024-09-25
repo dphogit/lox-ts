@@ -17,7 +17,6 @@ export class Parser {
   ) {}
 
   parse(): Expr | null {
-    // Temporary implementation until supports for statements are added.
     try {
       return this.expression();
     } catch (error) {

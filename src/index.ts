@@ -5,14 +5,15 @@ import readline from "node:readline";
 import { ErrorReporter } from "./error";
 import { Scanner } from "./scanner";
 import { Parser } from "./parser";
-import { AstFormatter } from "./formatting";
+import { Interpreter } from "./interpreter";
 
 // https://man.freebsd.org/cgi/man.cgi?query=sysexits
 const EX_USAGE = 64;
 const EX_DATAERR = 65;
+const EX_SOFTWARE = 70;
 
 const errorReporter = new ErrorReporter();
-const formatter = new AstFormatter();
+const interpreter = new Interpreter(errorReporter);
 
 function printUsage() {
   console.log();
@@ -30,7 +31,7 @@ function run(source: string) {
 
   if (errorReporter.hasError() || expression === null) return;
 
-  console.log(formatter.format(expression));
+  interpreter.interpret(expression);
 }
 
 function runPrompt() {
@@ -66,6 +67,8 @@ function runFile(path: string) {
 
     if (errorReporter.hasError()) {
       process.exitCode = EX_DATAERR;
+    } else if (errorReporter.hasRuntimeError()) {
+      process.exitCode = EX_SOFTWARE;
     }
   });
 }
