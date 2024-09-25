@@ -4,12 +4,15 @@ import readline from "node:readline";
 
 import { ErrorReporter } from "./error";
 import { Scanner } from "./scanner";
+import { Parser } from "./parser";
+import { AstFormatter } from "./formatting";
 
 // https://man.freebsd.org/cgi/man.cgi?query=sysexits
 const EX_USAGE = 64;
 const EX_DATAERR = 65;
 
 const errorReporter = new ErrorReporter();
+const formatter = new AstFormatter();
 
 function printUsage() {
   console.log();
@@ -22,8 +25,12 @@ function run(source: string) {
   const scanner = new Scanner(source, errorReporter);
   const tokens = scanner.scanTokens();
 
-  // For now, print the tokens until we create a parser
-  tokens.forEach((token) => console.log(token.toString()));
+  const parser = new Parser(tokens, errorReporter);
+  const expression = parser.parse();
+
+  if (errorReporter.hasError() || expression === null) return;
+
+  console.log(formatter.format(expression));
 }
 
 function runPrompt() {

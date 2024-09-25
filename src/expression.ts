@@ -27,7 +27,7 @@ export class BinaryExpr extends Expr {
 }
 
 export class GroupingExpr extends Expr {
-  constructor(readonly expr: Expr) {
+  constructor(readonly expression: Expr) {
     super();
   }
 

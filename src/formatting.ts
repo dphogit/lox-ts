@@ -24,7 +24,7 @@ export class AstFormatter implements IExprFormatter {
   }
 
   visitGroupingExpr(expr: GroupingExpr): string {
-    return this.parenthesize("group", expr.expr);
+    return this.parenthesize("group", expr.expression);
   }
 
   visitLiteralExpr(expr: LiteralExpr): string {
@@ -62,7 +62,7 @@ export class RpnFormatter implements IExprFormatter {
   }
 
   visitGroupingExpr(expr: GroupingExpr): string {
-    return expr.expr.accept(this);
+    return expr.expression.accept(this);
   }
 
   visitLiteralExpr(expr: LiteralExpr): string {
