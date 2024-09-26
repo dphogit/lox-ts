@@ -1,4 +1,4 @@
-import { IErrorReporter } from "./error";
+import { IErrorReporter, SyntaxError } from "./error";
 import { keywords, Token, tokenFactory, TokenType } from "./token";
 import { LoxObject } from "./types";
 
@@ -105,7 +105,9 @@ export class Scanner {
           return;
         }
 
-        this.errorReporter.error(this.line, "Unexpected character.");
+        this.errorReporter.report(
+          new SyntaxError(`Unexpected character '${c}'`, this.line),
+        );
         return;
     }
   }
@@ -149,7 +151,9 @@ export class Scanner {
     }
 
     if (this.isAtEnd()) {
-      this.errorReporter.error(this.line, "Unterminated string.");
+      this.errorReporter.report(
+        new SyntaxError("Unterminated string.", this.line),
+      );
       return;
     }
 
@@ -178,7 +182,9 @@ export class Scanner {
     }
 
     if (this.isAtEnd()) {
-      this.errorReporter.error(this.line, "Unterminated comment.");
+      this.errorReporter.report(
+        new SyntaxError("Unterminated comment.", this.line),
+      );
       return;
     }
 

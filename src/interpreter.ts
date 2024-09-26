@@ -22,7 +22,7 @@ export class Interpreter implements IExprVisitor<LoxObject> {
       console.log(stringify(value));
     } catch (error) {
       if (error instanceof RuntimeError) {
-        this.errorReporter.runtimeError(error);
+        this.errorReporter.report(error);
       }
     }
   }
@@ -76,7 +76,7 @@ export class Interpreter implements IExprVisitor<LoxObject> {
 
         throw new RuntimeError(
           optr,
-          "Operands must be two numbers, or two strings, or a number and string.",
+          "Operands must be two numbers, or one operand must be a string.",
         );
 
       case "SLASH":

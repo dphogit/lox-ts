@@ -1,66 +1,60 @@
 import { Token } from "./token";
 
-// TODO Union type for different errors for cleaner implementation.
-// At the moment: syntax error (parsing), runtime error (interpreter)
-
-/**
- * Parameter type of argu that is passed to the error reporter's error method.
- * If it is a number, this is the line number.
- * If it is a Token, this is the token object.
- */
-type ReportErrorArg = number | Token;
+type ReportError = SyntaxError | RuntimeError;
 
 export interface IErrorReporter {
   hasError(): boolean;
   hasRuntimeError(): boolean;
-  clearError(): void;
-  error(arg: ReportErrorArg, message: string): void;
-  runtimeError(error: RuntimeError): void;
+  clearErrors(): void;
+  report(error: ReportError): void;
 }
 
 export class ErrorReporter implements IErrorReporter {
-  private _hasError = false;
+  private _hasSyntaxError = false;
   private _hasRuntimeError = false;
 
-  hasError() {
-    return this._hasError;
+  hasError(): boolean {
+    return this._hasSyntaxError;
   }
 
   hasRuntimeError(): boolean {
     return this._hasRuntimeError;
   }
 
-  clearError() {
-    this._hasError = false;
+  clearErrors(): void {
+    this._hasSyntaxError = false;
+    this._hasRuntimeError = false;
   }
 
-  error(arg: ReportErrorArg, message: string): void {
-    if (typeof arg === "number") {
-      const line = arg;
-      this.report(line, "", message);
+  report(error: ReportError): void {
+    if (error instanceof RuntimeError) {
+      console.error(`${error.message}\n[line ${error.token.line}]`);
+      this._hasRuntimeError = true;
       return;
     }
 
-    const token = arg;
-    if (token.type === "EOF") {
-      this.report(token.line, " at end", message);
-      return;
+    // error is SyntaxError
+    if (error.where === undefined) {
+      console.error(`[line ${error.line}] Error: ${error.message}`);
+    } else {
+      console.error(
+        `[line ${error.line}] Error ${error.where}: ${error.message}`,
+      );
     }
-    this.report(token.line, ` at '${token.lexeme}'`, message);
-  }
 
-  runtimeError(error: RuntimeError): void {
-    console.error(`${error.message}\n[line ${error.token.line}]`);
-    this._hasRuntimeError = true;
-  }
-
-  private report(line: number, where: string, message: string) {
-    console.error(`[line ${line}] Error ${where}: ${message}`);
-    this._hasError = true;
+    this._hasSyntaxError = true;
   }
 }
 
-export class ParseError extends Error {}
+export class SyntaxError extends Error {
+  constructor(
+    public message: string,
+    public line: number,
+    public where?: string,
+  ) {
+    super(message);
+  }
+}
 
 export class RuntimeError extends Error {
   constructor(

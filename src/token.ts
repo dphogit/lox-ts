@@ -14,11 +14,17 @@ export class Token {
 }
 
 export const tokenFactory = {
+  createBang(line: number) {
+    return new Token("BANG", "!", null, line);
+  },
   createEof(line: number) {
     return new Token("EOF", "", null, line);
   },
   createEqual(line: number) {
     return new Token("EQUAL", "=", null, line);
+  },
+  createEqualEqual(line: number) {
+    return new Token("EQUAL_EQUAL", "==", null, line);
   },
   createIdentifier(lexeme: string, line: number) {
     return new Token("IDENTIFIER", lexeme, null, line);

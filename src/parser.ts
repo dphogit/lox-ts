@@ -1,4 +1,4 @@
-import { IErrorReporter, ParseError } from "./error";
+import { IErrorReporter, SyntaxError } from "./error";
 import {
   BinaryExpr,
   Expr,
@@ -20,7 +20,7 @@ export class Parser {
     try {
       return this.expression();
     } catch (error) {
-      if (error instanceof ParseError) return null;
+      if (error instanceof SyntaxError) return null;
       throw error;
     }
   }
@@ -154,9 +154,14 @@ export class Parser {
     return this.tokens[this.currentIndex - 1];
   }
 
-  private error(token: Token, message: string): ParseError {
-    this.errorReporter.error(token, message);
-    return new ParseError();
+  private error(token: Token, message: string): SyntaxError {
+    const syntaxError =
+      token.type === "EOF"
+        ? new SyntaxError(message, token.line, "at end")
+        : new SyntaxError(message, token.line, `at ${token.lexeme}`);
+
+    this.errorReporter.report(syntaxError);
+    return syntaxError;
   }
 
   /**

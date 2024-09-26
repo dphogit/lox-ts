@@ -48,7 +48,7 @@ function runPrompt() {
       run(line);
     }
 
-    errorReporter.clearError();
+    errorReporter.clearErrors();
 
     // Continuously reprompt
     rl.prompt();
