@@ -6,32 +6,49 @@ export abstract class Stmt {
 }
 
 export interface IStmtVisitor<R> {
+  visitBlockStmt(stmt: BlockStmt): R;
   visitExprStmt(stmt: ExprStmt): R;
   visitPrintStmt(stmt: PrintStmt): R;
   visitVarStmt(stmt: VarStmt): R;
 }
 
-export class ExprStmt implements Stmt {
-  constructor(readonly expr: Expr) {}
+export class BlockStmt extends Stmt {
+  constructor(readonly statements: Stmt[]) {
+    super();
+  }
+
+  accept<R>(visitor: IStmtVisitor<R>): R {
+    return visitor.visitBlockStmt(this);
+  }
+}
+
+export class ExprStmt extends Stmt {
+  constructor(readonly expr: Expr) {
+    super();
+  }
 
   accept<R>(visitor: IStmtVisitor<R>): R {
     return visitor.visitExprStmt(this);
   }
 }
 
-export class PrintStmt implements Stmt {
-  constructor(readonly expr: Expr) {}
+export class PrintStmt extends Stmt {
+  constructor(readonly expr: Expr) {
+    super();
+  }
 
   accept<R>(visitor: IStmtVisitor<R>): R {
     return visitor.visitPrintStmt(this);
   }
 }
 
-export class VarStmt implements Stmt {
+export class VarStmt extends Stmt {
   constructor(
     readonly name: Token,
     readonly initializer?: Expr,
-  ) {}
+  ) {
+    super();
+  }
 
   accept<R>(visitor: IStmtVisitor<R>): R {
     return visitor.visitVarStmt(this);

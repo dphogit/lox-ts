@@ -29,11 +29,17 @@ export const tokenFactory = {
   createIdentifier(lexeme: string, line: number) {
     return new Token("IDENTIFIER", lexeme, null, line);
   },
+  createLeftBrace(line: number) {
+    return new Token("LEFT_BRACE", "{", null, line);
+  },
   createMinus(line: number) {
     return new Token("MINUS", "-", null, line);
   },
   createNumber(literal: number, line: number) {
     return new Token("NUMBER", literal.toString(), literal, line);
+  },
+  createRightBrace(line: number) {
+    return new Token("RIGHT_BRACE", "}", null, line);
   },
   createSemiColon(line: number) {
     return new Token("SEMICOLON", ";", null, line);

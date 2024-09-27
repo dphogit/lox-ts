@@ -10,7 +10,14 @@ import {
   UnaryExpr,
   VarExpr,
 } from "./expression";
-import { ExprStmt, IStmtVisitor, PrintStmt, Stmt, VarStmt } from "./statement";
+import {
+  BlockStmt,
+  ExprStmt,
+  IStmtVisitor,
+  PrintStmt,
+  Stmt,
+  VarStmt,
+} from "./statement";
 import { Token } from "./token";
 import { LoxObject } from "./types";
 
@@ -20,6 +27,7 @@ import { LoxObject } from "./types";
 export class Interpreter
   implements IExprVisitor<LoxObject>, IStmtVisitor<void>
 {
+  // Points to the current (innermost) environment, initially set to global.
   private environment: Environment = new Environment();
 
   constructor(private errorReporter: IErrorReporter) {}
@@ -142,8 +150,8 @@ export class Interpreter
 
   // ---------- STATEMENTS ----------
 
-  private execute(stmt: Stmt) {
-    return stmt.accept(this);
+  visitBlockStmt(stmt: BlockStmt): void {
+    this.executeBlock(stmt.statements, new Environment(this.environment));
   }
 
   visitExprStmt(stmt: ExprStmt): void {
@@ -159,6 +167,25 @@ export class Interpreter
     const value =
       stmt.initializer !== undefined ? this.evaluate(stmt.initializer) : null;
     this.environment.define(stmt.name.lexeme, value);
+  }
+
+  private execute(stmt: Stmt) {
+    return stmt.accept(this);
+  }
+
+  // Executes statements in the context of a given environment
+  private executeBlock(statements: Stmt[], environment: Environment) {
+    const previous = this.environment; // Keep reference to original environment
+
+    try {
+      this.environment = environment;
+
+      for (const stmt of statements) {
+        this.execute(stmt);
+      }
+    } finally {
+      this.environment = previous; // Restore the original environment
+    }
   }
 }
 

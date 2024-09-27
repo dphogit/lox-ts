@@ -8,7 +8,7 @@ import {
   UnaryExpr,
   VarExpr,
 } from "./expression";
-import { ExprStmt, PrintStmt, Stmt, VarStmt } from "./statement";
+import { BlockStmt, ExprStmt, PrintStmt, Stmt, VarStmt } from "./statement";
 import { Token, TokenType } from "./token";
 
 export class Parser {
@@ -33,7 +33,9 @@ export class Parser {
       if (this.match("VAR")) return this.varDeclaration();
       return this.statement();
     } catch (error) {
-      this.synchronize();
+      if (error instanceof SyntaxError) {
+        this.synchronize();
+      }
       return null;
     }
   }
@@ -49,6 +51,7 @@ export class Parser {
 
   private statement(): Stmt {
     if (this.match("PRINT")) return this.printStatement();
+    if (this.match("LEFT_BRACE")) return new BlockStmt(this.block());
     return this.expressionStatement();
   }
 
@@ -62,6 +65,20 @@ export class Parser {
     const expr = this.expression();
     this.consume("SEMICOLON", "Expect ';' after expression.");
     return new ExprStmt(expr);
+  }
+
+  private block(): Stmt[] {
+    const statements = [];
+
+    while (!this.check("RIGHT_BRACE") && !this.isAtEnd()) {
+      const statement = this.declaration();
+      if (statement) {
+        statements.push(statement);
+      }
+    }
+
+    this.consume("RIGHT_BRACE", "Expect '}' after block.");
+    return statements;
   }
 
   private expression(): Expr {
