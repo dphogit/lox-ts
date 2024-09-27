@@ -27,11 +27,11 @@ function run(source: string) {
   const tokens = scanner.scanTokens();
 
   const parser = new Parser(tokens, errorReporter);
-  const expression = parser.parse();
+  const statements = parser.parse();
 
-  if (errorReporter.hasError() || expression === null) return;
+  if (errorReporter.hasError()) return;
 
-  interpreter.interpret(expression);
+  interpreter.interpret(statements);
 }
 
 function runPrompt() {

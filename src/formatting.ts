@@ -5,6 +5,7 @@ import {
   IExprVisitor,
   LiteralExpr,
   UnaryExpr,
+  VarExpr,
 } from "./expression";
 
 export interface IExprFormatter extends IExprVisitor<string> {
@@ -33,6 +34,10 @@ export class AstFormatter implements IExprFormatter {
 
   visitUnaryExpr(expr: UnaryExpr): string {
     return this.parenthesize(expr.operator.lexeme, expr.right);
+  }
+
+  visitVarExpr(expr: VarExpr): string {
+    return expr.name.lexeme;
   }
 
   private parenthesize(name: string, ...exprs: Expr[]): string {
@@ -71,5 +76,9 @@ export class RpnFormatter implements IExprFormatter {
 
   visitUnaryExpr(expr: UnaryExpr): string {
     return `${expr.right.accept(this)} ${expr.operator.lexeme}`;
+  }
+
+  visitVarExpr(expr: VarExpr): string {
+    return expr.name.lexeme;
   }
 }

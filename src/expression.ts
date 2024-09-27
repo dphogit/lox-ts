@@ -10,6 +10,7 @@ export interface IExprVisitor<R> {
   visitGroupingExpr(expr: GroupingExpr): R;
   visitLiteralExpr(expr: LiteralExpr): R;
   visitUnaryExpr(expr: UnaryExpr): R;
+  visitVarExpr(expr: VarExpr): R;
 }
 
 export class BinaryExpr extends Expr {
@@ -56,5 +57,15 @@ export class UnaryExpr extends Expr {
 
   accept<R>(visitor: IExprVisitor<R>): R {
     return visitor.visitUnaryExpr(this);
+  }
+}
+
+export class VarExpr extends Expr {
+  constructor(readonly name: Token) {
+    super();
+  }
+
+  accept<R>(visitor: IExprVisitor<R>): R {
+    return visitor.visitVarExpr(this);
   }
 }

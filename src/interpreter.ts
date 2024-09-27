@@ -1,3 +1,4 @@
+import { Environment } from "./environment";
 import { IErrorReporter, RuntimeError } from "./error";
 import {
   BinaryExpr,
@@ -6,26 +7,33 @@ import {
   IExprVisitor,
   LiteralExpr,
   UnaryExpr,
+  VarExpr,
 } from "./expression";
+import { ExprStmt, IStmtVisitor, PrintStmt, Stmt, VarStmt } from "./statement";
 import { Token } from "./token";
 import { LoxObject } from "./types";
 
 /**
  * Evaluates and computes values for provided expressions.
  */
-export class Interpreter implements IExprVisitor<LoxObject> {
+export class Interpreter
+  implements IExprVisitor<LoxObject>, IStmtVisitor<void>
+{
+  private environment: Environment = new Environment();
+
   constructor(private errorReporter: IErrorReporter) {}
 
-  interpret(expr: Expr): void {
+  interpret(statements: Stmt[]): void {
     try {
-      const value = this.evaluate(expr);
-      console.log(stringify(value));
-    } catch (error) {
-      if (error instanceof RuntimeError) {
-        this.errorReporter.report(error);
+      for (const statement of statements) {
+        this.execute(statement);
       }
+    } catch (error) {
+      if (error instanceof RuntimeError) this.errorReporter.report(error);
     }
   }
+
+  // ---------- Expressions ----------
 
   visitBinaryExpr(expr: BinaryExpr): LoxObject {
     const left = this.evaluate(expr.left);
@@ -117,8 +125,33 @@ export class Interpreter implements IExprVisitor<LoxObject> {
     return null; // Unreachable.
   }
 
+  visitVarExpr(expr: VarExpr): LoxObject {
+    return this.environment.get(expr.name);
+  }
+
   private evaluate(expr: Expr): LoxObject {
     return expr.accept(this);
+  }
+
+  // ---------- STATEMENTS ----------
+
+  private execute(stmt: Stmt) {
+    return stmt.accept(this);
+  }
+
+  visitExprStmt(stmt: ExprStmt): void {
+    this.evaluate(stmt.expr);
+  }
+
+  visitPrintStmt(stmt: PrintStmt): void {
+    const value = this.evaluate(stmt.expr);
+    console.log(stringify(value));
+  }
+
+  visitVarStmt(stmt: VarStmt): void {
+    const value =
+      stmt.initializer !== undefined ? this.evaluate(stmt.initializer) : null;
+    this.environment.define(stmt.name.lexeme, value);
   }
 }
 

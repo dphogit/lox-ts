@@ -5,7 +5,9 @@ import {
   GroupingExpr,
   LiteralExpr,
   UnaryExpr,
+  VarExpr,
 } from "./expression";
+import { ExprStmt, PrintStmt, Stmt, VarStmt } from "./statement";
 import { Token, TokenType } from "./token";
 
 export class Parser {
@@ -16,14 +18,51 @@ export class Parser {
     private errorReporter: IErrorReporter,
   ) {}
 
-  parse(): Expr | null {
+  parse(): Stmt[] {
+    const statements: Stmt[] = [];
+    while (!this.isAtEnd()) {
+      var stmt = this.declaration();
+      if (stmt !== null) statements.push(stmt);
+    }
+    return statements;
+  }
+
+  private declaration(): Stmt | null {
     try {
-      return this.expression();
+      if (this.match("VAR")) return this.varDeclaration();
+      return this.statement();
     } catch (error) {
-      if (error instanceof SyntaxError) return null;
-      throw error;
+      this.synchronize();
+      return null;
     }
   }
+
+  private varDeclaration(): VarStmt {
+    const varName = this.consume("IDENTIFIER", "Expect variable name.");
+
+    const initializer = this.match("EQUAL") ? this.expression() : undefined;
+
+    this.consume("SEMICOLON", "Expect ';' after declaration.");
+    return new VarStmt(varName, initializer);
+  }
+
+  private statement(): Stmt {
+    if (this.match("PRINT")) return this.printStatement();
+    return this.expressionStatement();
+  }
+
+  private printStatement(): PrintStmt {
+    const value = this.expression();
+    this.consume("SEMICOLON", "Expect ';' after expression.");
+    return new PrintStmt(value);
+  }
+
+  private expressionStatement(): ExprStmt {
+    const expr = this.expression();
+    this.consume("SEMICOLON", "Expect ';' after expression.");
+    return new ExprStmt(expr);
+  }
+
   private expression(): Expr {
     return this.equality();
   }
@@ -79,6 +118,10 @@ export class Parser {
 
     if (this.match("NUMBER", "STRING")) {
       return new LiteralExpr(this.previous().literal);
+    }
+
+    if (this.match("IDENTIFIER")) {
+      return new VarExpr(this.previous());
     }
 
     if (this.match("LEFT_PAREN")) {
