@@ -1,4 +1,5 @@
 import {
+  AssignExpr,
   BinaryExpr,
   Expr,
   GroupingExpr,
@@ -18,6 +19,11 @@ export interface IExprFormatter extends IExprVisitor<string> {
 export class AstFormatter implements IExprFormatter {
   format(expr: Expr): string {
     return expr.accept(this);
+  }
+
+  visitAssignExpr(expr: AssignExpr): string {
+    const name = new VarExpr(expr.name);
+    return this.parenthesize("assign", name, expr.value);
   }
 
   visitBinaryExpr(expr: BinaryExpr): string {
@@ -60,6 +66,10 @@ export class RpnFormatter implements IExprFormatter {
     return expr.accept(this);
   }
 
+  visitAssignExpr(expr: AssignExpr): string {
+    return `${expr.value} ${expr.name.lexeme} assign`;
+  }
+
   visitBinaryExpr(expr: BinaryExpr): string {
     const leftOperand = expr.left.accept(this);
     const rightOperand = expr.right.accept(this);
@@ -75,7 +85,9 @@ export class RpnFormatter implements IExprFormatter {
   }
 
   visitUnaryExpr(expr: UnaryExpr): string {
-    return `${expr.right.accept(this)} ${expr.operator.lexeme}`;
+    // Use '~' symbol for negation as '-' is used for binary subtraction
+    const op = expr.operator.type === "MINUS" ? "~" : expr.operator.lexeme;
+    return `${expr.right.accept(this)} ${op}`;
   }
 
   visitVarExpr(expr: VarExpr): string {

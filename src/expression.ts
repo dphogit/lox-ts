@@ -6,11 +6,25 @@ export abstract class Expr {
 }
 
 export interface IExprVisitor<R> {
+  visitAssignExpr(expr: AssignExpr): R;
   visitBinaryExpr(expr: BinaryExpr): R;
   visitGroupingExpr(expr: GroupingExpr): R;
   visitLiteralExpr(expr: LiteralExpr): R;
   visitUnaryExpr(expr: UnaryExpr): R;
   visitVarExpr(expr: VarExpr): R;
+}
+
+export class AssignExpr extends Expr {
+  constructor(
+    readonly name: Token,
+    readonly value: Expr,
+  ) {
+    super();
+  }
+
+  accept<R>(visitor: IExprVisitor<R>): R {
+    return visitor.visitAssignExpr(this);
+  }
 }
 
 export class BinaryExpr extends Expr {

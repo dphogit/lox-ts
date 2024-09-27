@@ -2,9 +2,15 @@ import { describe, expect, test } from "vitest";
 
 import { Interpreter } from "../../src/interpreter";
 import { IErrorReporter, ErrorReporter, RuntimeError } from "../../src/error";
-import { BinaryExpr, LiteralExpr, UnaryExpr } from "../../src/expression";
+import {
+  BinaryExpr,
+  LiteralExpr,
+  UnaryExpr,
+  VarExpr,
+} from "../../src/expression";
 import { tokenFactory } from "../../src/token";
 import { LoxObject } from "../../src/types";
+import { VarStmt } from "../../src/statement";
 
 function createInterpreter(errorReporter?: IErrorReporter) {
   return new Interpreter(errorReporter ?? new ErrorReporter());
@@ -133,5 +139,34 @@ describe("visitBinaryExpr", () => {
 
     expect(result).toBeTypeOf("boolean");
     expect(result).toEqual(false);
+  });
+});
+
+describe("visitVarExpr", () => {
+  test("uninitialized variable returns nil", () => {
+    const interpreter = createInterpreter();
+    const name = tokenFactory.createIdentifier("x", 1);
+    interpreter.visitVarStmt(new VarStmt(name));
+
+    const result = interpreter.visitVarExpr(new VarExpr(name));
+
+    expect(result).toBeTypeOf("object");
+    expect(result).toBeNull();
+  });
+
+  test("initialized variable returns evaluated expression", () => {
+    const interpreter = createInterpreter();
+    const name = tokenFactory.createIdentifier("x", 1);
+    const sumExpr = new BinaryExpr(
+      new LiteralExpr(1),
+      tokenFactory.createPlus(1),
+      new LiteralExpr(2),
+    );
+    interpreter.visitVarStmt(new VarStmt(name, sumExpr));
+
+    const result = interpreter.visitVarExpr(new VarExpr(name));
+
+    expect(result).toBeTypeOf("number");
+    expect(result).toEqual(3);
   });
 });

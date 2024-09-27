@@ -14,6 +14,19 @@ export class Environment {
   }
 
   /**
+   * Assigns the value to an already existing variable.
+   * @throws {RuntimeError} if the variable does not exist.
+   */
+  assign(name: Token, value: LoxObject): void {
+    if (this.values.hasOwnProperty(name.lexeme)) {
+      this.values[name.lexeme] = value;
+      return;
+    }
+
+    throw new RuntimeError(name, `Undefined variable '${name.lexeme}'.`);
+  }
+
+  /**
    * Looks up a variable and returns the value bound to it.
    * @throws {RuntimeError} when variable is not found.
    */

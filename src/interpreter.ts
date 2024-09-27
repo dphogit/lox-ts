@@ -1,6 +1,7 @@
 import { Environment } from "./environment";
 import { IErrorReporter, RuntimeError } from "./error";
 import {
+  AssignExpr,
   BinaryExpr,
   Expr,
   GroupingExpr,
@@ -34,6 +35,12 @@ export class Interpreter
   }
 
   // ---------- Expressions ----------
+
+  visitAssignExpr(expr: AssignExpr): LoxObject {
+    const value = this.evaluate(expr.value);
+    this.environment.assign(expr.name, value);
+    return value;
+  }
 
   visitBinaryExpr(expr: BinaryExpr): LoxObject {
     const left = this.evaluate(expr.left);

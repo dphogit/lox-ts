@@ -1,5 +1,6 @@
 import { IErrorReporter, SyntaxError } from "./error";
 import {
+  AssignExpr,
   BinaryExpr,
   Expr,
   GroupingExpr,
@@ -64,7 +65,24 @@ export class Parser {
   }
 
   private expression(): Expr {
-    return this.equality();
+    return this.assignment();
+  }
+
+  private assignment(): Expr {
+    var expr = this.equality();
+
+    if (this.match("EQUAL")) {
+      const equalsToken = this.previous();
+      const value = this.assignment();
+
+      if (expr instanceof VarExpr) {
+        return new AssignExpr(expr.name, value);
+      }
+
+      this.error(equalsToken, "Invalid assignment target.");
+    }
+
+    return expr;
   }
 
   private equality(): Expr {
