@@ -10,7 +10,7 @@ import {
   PrintStmt,
   VarStmt,
 } from "../../src/statement";
-import { BinaryExpr, LiteralExpr } from "../../src/expression";
+import { BinaryExpr, LiteralExpr, LogicalExpr } from "../../src/expression";
 
 function createParser(tokens: Token[]) {
   return new Parser(tokens, new ErrorReporter());
@@ -136,5 +136,61 @@ describe("Parser class", () => {
     const printStmt2 = elseBranch as PrintStmt;
     expect(printStmt2.expr).toBeInstanceOf(LiteralExpr);
     expect((printStmt2.expr as LiteralExpr).value).toEqual("else branch");
+  });
+
+  test("logical or returns correct expression statement", () => {
+    const parser = createParser([
+      tokenFactory.createNumber(69, 1),
+      tokenFactory.createOr(1),
+      tokenFactory.createNumber(420, 1),
+      tokenFactory.createSemiColon(1),
+      tokenFactory.createEof(1),
+    ]);
+
+    const result = parser.parse();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toBeInstanceOf(ExprStmt);
+
+    const { expr } = result[0] as ExprStmt;
+
+    expect(expr).toBeInstanceOf(LogicalExpr);
+    const { operator, left, right } = expr as LogicalExpr;
+
+    expect(operator.lexeme).toEqual("or");
+
+    expect(left).toBeInstanceOf(LiteralExpr);
+    expect((left as LiteralExpr).value).toEqual(69);
+
+    expect(right).toBeInstanceOf(LiteralExpr);
+    expect((right as LiteralExpr).value).toEqual(420);
+  });
+
+  test("logical and returns correct expression statement", () => {
+    const parser = createParser([
+      tokenFactory.createNumber(69, 1),
+      tokenFactory.createAnd(1),
+      tokenFactory.createNumber(420, 1),
+      tokenFactory.createSemiColon(1),
+      tokenFactory.createEof(1),
+    ]);
+
+    const result = parser.parse();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toBeInstanceOf(ExprStmt);
+
+    const { expr } = result[0] as ExprStmt;
+
+    expect(expr).toBeInstanceOf(LogicalExpr);
+    const { operator, left, right } = expr as LogicalExpr;
+
+    expect(operator.lexeme).toEqual("and");
+
+    expect(left).toBeInstanceOf(LiteralExpr);
+    expect((left as LiteralExpr).value).toEqual(69);
+
+    expect(right).toBeInstanceOf(LiteralExpr);
+    expect((right as LiteralExpr).value).toEqual(420);
   });
 });

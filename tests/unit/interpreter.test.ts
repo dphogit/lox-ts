@@ -5,6 +5,7 @@ import { IErrorReporter, ErrorReporter, RuntimeError } from "../../src/error";
 import {
   BinaryExpr,
   LiteralExpr,
+  LogicalExpr,
   UnaryExpr,
   VarExpr,
 } from "../../src/expression";
@@ -168,5 +169,59 @@ describe("visitVarExpr", () => {
 
     expect(result).toBeTypeOf("number");
     expect(result).toEqual(3);
+  });
+});
+
+describe("visitLogicalExpr", () => {
+  test("logical or with truthy left operand short-circuits and returns left evaluated operand", () => {
+    const interpreter = createInterpreter();
+    const orExpr = new LogicalExpr(
+      new LiteralExpr("Yes"),
+      tokenFactory.createOr(1),
+      new LiteralExpr("Should not reach here"),
+    );
+
+    const result = interpreter.visitLogicalExpr(orExpr);
+
+    expect(result).toEqual("Yes");
+  });
+
+  test("logical or with falsy left operand returns right evaluated operand", () => {
+    const interpreter = createInterpreter();
+    const orExpr = new LogicalExpr(
+      new LiteralExpr(null),
+      tokenFactory.createOr(1),
+      new LiteralExpr("Yes"),
+    );
+
+    const result = interpreter.visitLogicalExpr(orExpr);
+
+    expect(result).toEqual("Yes");
+  });
+
+  test("logical and with truthy left operand returns right evaluated operand", () => {
+    const interpreter = createInterpreter();
+    const andExpr = new LogicalExpr(
+      new LiteralExpr("Truthy"),
+      tokenFactory.createAnd(1),
+      new LiteralExpr("Yes"),
+    );
+
+    const result = interpreter.visitLogicalExpr(andExpr);
+
+    expect(result).toEqual("Yes");
+  });
+
+  test("logical and with falsy left operand short-circuits and returns left evaluated operand", () => {
+    const interpreter = createInterpreter();
+    const andExpr = new LogicalExpr(
+      new LiteralExpr(null),
+      tokenFactory.createAnd(1),
+      new LiteralExpr("Should not reach here"),
+    );
+
+    const result = interpreter.visitLogicalExpr(andExpr);
+
+    expect(result).toEqual(null);
   });
 });

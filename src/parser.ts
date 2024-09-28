@@ -5,6 +5,7 @@ import {
   Expr,
   GroupingExpr,
   LiteralExpr,
+  LogicalExpr,
   UnaryExpr,
   VarExpr,
 } from "./expression";
@@ -105,7 +106,7 @@ export class Parser {
   }
 
   private assignment(): Expr {
-    var expr = this.equality();
+    var expr = this.logicalOr();
 
     if (this.match("EQUAL")) {
       const equalsToken = this.previous();
@@ -119,6 +120,14 @@ export class Parser {
     }
 
     return expr;
+  }
+
+  private logicalOr(): Expr {
+    return this.leftAssociativeLogicalOperators(() => this.logicalAnd(), "OR");
+  }
+
+  private logicalAnd(): Expr {
+    return this.leftAssociativeLogicalOperators(() => this.equality(), "AND");
   }
 
   private equality(): Expr {
@@ -189,8 +198,8 @@ export class Parser {
 
   /**
    * Helper to parse left-associative series of binary operators that have the
-   * the grammer: <head> -> <r> (("!=" | "==") <r> )* ; where <r> is the
-   * nonterminal of the next higher precedence. To read more:
+   * the grammer: <head> -> <r> ((binary op a | binary op b | ...) <r> )* ;
+   * where <r> is the nonterminal of the next higher precedence. To read more:
    * @see https://www.craftinginterpreters.com/representing-code.html
    * @see https://www.craftinginterpreters.com/parsing-expressions.html
    */
@@ -204,6 +213,21 @@ export class Parser {
       const operator = this.previous();
       const right = operand();
       expr = new BinaryExpr(expr, operator, right);
+    }
+
+    return expr;
+  }
+
+  private leftAssociativeLogicalOperators(
+    operand: () => Expr,
+    ...types: TokenType[]
+  ): Expr {
+    let expr = operand();
+
+    while (this.match(...types)) {
+      const operator = this.previous();
+      const right = operand();
+      expr = new LogicalExpr(expr, operator, right);
     }
 
     return expr;

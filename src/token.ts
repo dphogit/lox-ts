@@ -14,6 +14,9 @@ export class Token {
 }
 
 export const tokenFactory = {
+  createAnd(line: number) {
+    return new Token("AND", "and", null, line);
+  },
   createBang(line: number) {
     return new Token("BANG", "!", null, line);
   },
@@ -46,6 +49,9 @@ export const tokenFactory = {
   },
   createNumber(literal: number, line: number) {
     return new Token("NUMBER", literal.toString(), literal, line);
+  },
+  createOr(line: number) {
+    return new Token("OR", "or", null, line);
   },
   createRightBrace(line: number) {
     return new Token("RIGHT_BRACE", "}", null, line);

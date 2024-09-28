@@ -7,6 +7,7 @@ import {
   GroupingExpr,
   IExprVisitor,
   LiteralExpr,
+  LogicalExpr,
   UnaryExpr,
   VarExpr,
 } from "./expression";
@@ -123,6 +124,20 @@ export class Interpreter
 
   visitLiteralExpr(expr: LiteralExpr): LoxObject {
     return expr.value;
+  }
+
+  visitLogicalExpr(expr: LogicalExpr): LoxObject {
+    const left = this.evaluate(expr.left);
+
+    // Evaluate the left operand first to see if can short-circuit.
+    // Logical expressions will return a value with appropriate truthiness.
+    if (expr.operator.type === "OR") {
+      if (isTruthy(left)) return left;
+    } else if (expr.operator.type === "AND") {
+      if (!isTruthy(left)) return left;
+    }
+
+    return this.evaluate(expr.right);
   }
 
   visitUnaryExpr(expr: UnaryExpr): LoxObject {

@@ -5,6 +5,7 @@ import {
   GroupingExpr,
   IExprVisitor,
   LiteralExpr,
+  LogicalExpr,
   UnaryExpr,
   VarExpr,
 } from "./expression";
@@ -36,6 +37,10 @@ export class AstFormatter implements IExprFormatter {
 
   visitLiteralExpr(expr: LiteralExpr): string {
     return expr.value === null ? "nil" : expr.value.toString();
+  }
+
+  visitLogicalExpr(expr: LogicalExpr): string {
+    return this.parenthesize(expr.operator.lexeme, expr.left, expr.right);
   }
 
   visitUnaryExpr(expr: UnaryExpr): string {
@@ -71,9 +76,7 @@ export class RpnFormatter implements IExprFormatter {
   }
 
   visitBinaryExpr(expr: BinaryExpr): string {
-    const leftOperand = expr.left.accept(this);
-    const rightOperand = expr.right.accept(this);
-    return `${leftOperand} ${rightOperand} ${expr.operator.lexeme}`;
+    return `${expr.left.accept(this)} ${expr.right.accept(this)} ${expr.operator.lexeme}`;
   }
 
   visitGroupingExpr(expr: GroupingExpr): string {
@@ -82,6 +85,10 @@ export class RpnFormatter implements IExprFormatter {
 
   visitLiteralExpr(expr: LiteralExpr): string {
     return expr.value === null ? "nil" : expr.value.toString();
+  }
+
+  visitLogicalExpr(expr: LogicalExpr): string {
+    return `${expr.left.accept(this)} ${expr.right.accept(this)} ${expr.operator.lexeme}`;
   }
 
   visitUnaryExpr(expr: UnaryExpr): string {
