@@ -8,7 +8,14 @@ import {
   UnaryExpr,
   VarExpr,
 } from "./expression";
-import { BlockStmt, ExprStmt, PrintStmt, Stmt, VarStmt } from "./statement";
+import {
+  BlockStmt,
+  ExprStmt,
+  IfStmt,
+  PrintStmt,
+  Stmt,
+  VarStmt,
+} from "./statement";
 import { Token, TokenType } from "./token";
 
 export class Parser {
@@ -50,9 +57,21 @@ export class Parser {
   }
 
   private statement(): Stmt {
+    if (this.match("IF")) return this.ifStatement();
     if (this.match("PRINT")) return this.printStatement();
     if (this.match("LEFT_BRACE")) return new BlockStmt(this.block());
     return this.expressionStatement();
+  }
+
+  private ifStatement(): IfStmt {
+    this.consume("LEFT_PAREN", "Expect '(' after 'if'.");
+    const condition = this.expression();
+    this.consume("RIGHT_PAREN", "Expect ')' after if condition.");
+
+    const thenBranch = this.statement();
+    const elseBranch = this.match("ELSE") ? this.statement() : undefined;
+
+    return new IfStmt(condition, thenBranch, elseBranch);
   }
 
   private printStatement(): PrintStmt {

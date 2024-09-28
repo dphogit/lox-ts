@@ -26,11 +26,20 @@ export const tokenFactory = {
   createEqualEqual(line: number) {
     return new Token("EQUAL_EQUAL", "==", null, line);
   },
+  createIf(line: number) {
+    return new Token("IF", "if", null, line);
+  },
+  createElse(line: number) {
+    return new Token("ELSE", "else", null, line);
+  },
   createIdentifier(lexeme: string, line: number) {
     return new Token("IDENTIFIER", lexeme, null, line);
   },
   createLeftBrace(line: number) {
     return new Token("LEFT_BRACE", "{", null, line);
+  },
+  createLeftParen(line: number) {
+    return new Token("LEFT_PAREN", "(", null, line);
   },
   createMinus(line: number) {
     return new Token("MINUS", "-", null, line);
@@ -40,6 +49,9 @@ export const tokenFactory = {
   },
   createRightBrace(line: number) {
     return new Token("RIGHT_BRACE", "}", null, line);
+  },
+  createRightParen(line: number) {
+    return new Token("RIGHT_PAREN", ")", null, line);
   },
   createSemiColon(line: number) {
     return new Token("SEMICOLON", ";", null, line);
@@ -58,6 +70,9 @@ export const tokenFactory = {
   },
   createStar(line: number) {
     return new Token("STAR", "*", null, line);
+  },
+  createTrue(line: number) {
+    return new Token("TRUE", "true", true, line);
   },
   createVar(line: number) {
     return new Token("VAR", "var", null, line);

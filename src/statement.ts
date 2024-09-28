@@ -8,6 +8,7 @@ export abstract class Stmt {
 export interface IStmtVisitor<R> {
   visitBlockStmt(stmt: BlockStmt): R;
   visitExprStmt(stmt: ExprStmt): R;
+  visitIfStmt(stmt: IfStmt): R;
   visitPrintStmt(stmt: PrintStmt): R;
   visitVarStmt(stmt: VarStmt): R;
 }
@@ -29,6 +30,20 @@ export class ExprStmt extends Stmt {
 
   accept<R>(visitor: IStmtVisitor<R>): R {
     return visitor.visitExprStmt(this);
+  }
+}
+
+export class IfStmt extends Stmt {
+  constructor(
+    readonly condition: Expr,
+    readonly thenBranch: Stmt,
+    readonly elseBranch?: Stmt,
+  ) {
+    super();
+  }
+
+  accept<R>(visitor: IStmtVisitor<R>): R {
+    return visitor.visitIfStmt(this);
   }
 }
 

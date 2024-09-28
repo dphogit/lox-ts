@@ -3,7 +3,13 @@ import { describe, expect, test } from "vitest";
 import { Parser } from "../../src/parser";
 import { ErrorReporter } from "../../src/error";
 import { Token, tokenFactory } from "../../src/token";
-import { BlockStmt, ExprStmt, PrintStmt, VarStmt } from "../../src/statement";
+import {
+  BlockStmt,
+  ExprStmt,
+  IfStmt,
+  PrintStmt,
+  VarStmt,
+} from "../../src/statement";
 import { BinaryExpr, LiteralExpr } from "../../src/expression";
 
 function createParser(tokens: Token[]) {
@@ -92,5 +98,43 @@ describe("Parser class", () => {
 
     expect(expr).toBeInstanceOf(LiteralExpr);
     expect((expr as LiteralExpr).value).toEqual("Hello, World!");
+  });
+
+  test("if else returns correct statements", () => {
+    const parser = createParser([
+      tokenFactory.createIf(1),
+      tokenFactory.createLeftParen(1),
+      tokenFactory.createTrue(1),
+      tokenFactory.createRightParen(1),
+      tokenFactory.createPrint(1),
+      tokenFactory.createString("true branch", 1),
+      tokenFactory.createSemiColon(1),
+
+      tokenFactory.createElse(2),
+      tokenFactory.createPrint(2),
+      tokenFactory.createString("else branch", 2),
+      tokenFactory.createSemiColon(2),
+      tokenFactory.createEof(2),
+    ]);
+
+    const result = parser.parse();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toBeInstanceOf(IfStmt);
+
+    const { condition, thenBranch, elseBranch } = result[0] as IfStmt;
+
+    expect(condition).toBeInstanceOf(LiteralExpr);
+    expect((condition as LiteralExpr).value).toEqual(true);
+
+    expect(thenBranch).toBeInstanceOf(PrintStmt);
+    const printStmt = thenBranch as PrintStmt;
+    expect(printStmt.expr).toBeInstanceOf(LiteralExpr);
+    expect((printStmt.expr as LiteralExpr).value).toEqual("true branch");
+
+    expect(elseBranch).toBeInstanceOf(PrintStmt);
+    const printStmt2 = elseBranch as PrintStmt;
+    expect(printStmt2.expr).toBeInstanceOf(LiteralExpr);
+    expect((printStmt2.expr as LiteralExpr).value).toEqual("else branch");
   });
 });

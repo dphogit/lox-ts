@@ -13,6 +13,7 @@ import {
 import {
   BlockStmt,
   ExprStmt,
+  IfStmt,
   IStmtVisitor,
   PrintStmt,
   Stmt,
@@ -156,6 +157,17 @@ export class Interpreter
 
   visitExprStmt(stmt: ExprStmt): void {
     this.evaluate(stmt.expr);
+  }
+
+  visitIfStmt(stmt: IfStmt): void {
+    if (isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.thenBranch);
+      return;
+    }
+
+    if (stmt.elseBranch) {
+      this.execute(stmt.elseBranch);
+    }
   }
 
   visitPrintStmt(stmt: PrintStmt): void {
