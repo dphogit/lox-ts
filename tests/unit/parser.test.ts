@@ -9,8 +9,15 @@ import {
   IfStmt,
   PrintStmt,
   VarStmt,
+  WhileStmt,
 } from "../../src/statement";
-import { BinaryExpr, LiteralExpr, LogicalExpr } from "../../src/expression";
+import {
+  AssignExpr,
+  BinaryExpr,
+  LiteralExpr,
+  LogicalExpr,
+  VarExpr,
+} from "../../src/expression";
 
 function createParser(tokens: Token[]) {
   return new Parser(tokens, new ErrorReporter());
@@ -192,5 +199,116 @@ describe("Parser class", () => {
 
     expect(right).toBeInstanceOf(LiteralExpr);
     expect((right as LiteralExpr).value).toEqual(420);
+  });
+
+  test("while loop returns correct statements", () => {
+    const parser = createParser([
+      tokenFactory.createWhile(1),
+      tokenFactory.createLeftParen(1),
+      tokenFactory.createTrue(1),
+      tokenFactory.createRightParen(1),
+      tokenFactory.createPrint(1),
+      tokenFactory.createString("Hello, World!", 1),
+      tokenFactory.createSemiColon(1),
+      tokenFactory.createEof(1),
+    ]);
+
+    const result = parser.parse();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toBeInstanceOf(WhileStmt);
+
+    const { body, condition } = result[0] as WhileStmt;
+
+    expect(condition).toBeInstanceOf(LiteralExpr);
+    expect((condition as LiteralExpr).value).toEqual(true);
+
+    expect(body).toBeInstanceOf(PrintStmt);
+
+    const { expr } = body as PrintStmt;
+
+    expect(expr).toBeInstanceOf(LiteralExpr);
+    expect((expr as LiteralExpr).value).toEqual("Hello, World!");
+  });
+
+  test("for loop returns correct desugared while statement", () => {
+    const parser = createParser([
+      tokenFactory.createFor(1),
+      tokenFactory.createLeftParen(1),
+      tokenFactory.createVar(1),
+      tokenFactory.createIdentifier("i", 1),
+      tokenFactory.createEqual(1),
+      tokenFactory.createNumber(0, 1),
+      tokenFactory.createSemiColon(1),
+      tokenFactory.createIdentifier("i", 1),
+      tokenFactory.createLessThan(1),
+      tokenFactory.createNumber(10, 1),
+      tokenFactory.createSemiColon(1),
+      tokenFactory.createIdentifier("i", 1),
+      tokenFactory.createEqual(1),
+      tokenFactory.createIdentifier("i", 1),
+      tokenFactory.createPlus(1),
+      tokenFactory.createNumber(1, 1),
+      tokenFactory.createRightParen(1),
+      tokenFactory.createPrint(1),
+      tokenFactory.createIdentifier("i", 1),
+      tokenFactory.createSemiColon(1),
+      tokenFactory.createEof(1),
+    ]);
+
+    const result = parser.parse();
+
+    // Assert for loop is desugared correctly to equivalent while loop
+    expect(result).toHaveLength(1);
+    expect(result[0]).toBeInstanceOf(BlockStmt);
+
+    const { statements } = result[0] as BlockStmt;
+    expect(statements).toHaveLength(2);
+    expect(statements[0]).toBeInstanceOf(VarStmt);
+    expect(statements[1]).toBeInstanceOf(WhileStmt);
+
+    const [varStmt, whileStmt] = statements as [VarStmt, WhileStmt];
+
+    const { name, initializer } = varStmt;
+    expect(name.lexeme).toEqual("i");
+    expect(initializer).toBeInstanceOf(LiteralExpr);
+    expect((initializer as LiteralExpr).value).toEqual(0);
+
+    const { body, condition } = whileStmt;
+
+    // Assert condition
+    expect(condition).toBeInstanceOf(BinaryExpr);
+    const { left, operator, right } = condition as BinaryExpr;
+
+    expect(operator.lexeme).toEqual("<");
+
+    expect(left).toBeInstanceOf(VarExpr);
+    expect((left as VarExpr).name.lexeme).toEqual("i");
+
+    expect(right).toBeInstanceOf(LiteralExpr);
+    expect((right as LiteralExpr).value).toEqual(10);
+
+    // Assert body
+    expect(body).toBeInstanceOf(BlockStmt);
+    const bodyStatements = (body as BlockStmt).statements;
+    const [printStmt, incrementStmt] = bodyStatements as [PrintStmt, ExprStmt];
+
+    expect(printStmt.expr).toBeInstanceOf(VarExpr);
+    expect((printStmt.expr as VarExpr).name.lexeme).toEqual("i");
+
+    expect(incrementStmt.expr).toBeInstanceOf(AssignExpr);
+    const incrementExpr = incrementStmt.expr as AssignExpr;
+    expect(incrementExpr.name.lexeme).toEqual("i");
+
+    expect(incrementExpr.value).toBeInstanceOf(BinaryExpr);
+    const plus1Expr = incrementExpr.value as BinaryExpr;
+
+    expect(plus1Expr.operator.lexeme).toEqual("+");
+
+    expect(plus1Expr.left).toBeInstanceOf(VarExpr);
+    expect((plus1Expr.left as VarExpr).name.lexeme).toEqual("i");
+
+    expect(plus1Expr.right).toBeInstanceOf(LiteralExpr);
+    expect((plus1Expr.right as LiteralExpr).value).toEqual(1);
   });
 });

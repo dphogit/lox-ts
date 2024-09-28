@@ -19,6 +19,7 @@ import {
   PrintStmt,
   Stmt,
   VarStmt,
+  WhileStmt,
 } from "./statement";
 import { Token } from "./token";
 import { LoxObject } from "./types";
@@ -194,6 +195,12 @@ export class Interpreter
     const value =
       stmt.initializer !== undefined ? this.evaluate(stmt.initializer) : null;
     this.environment.define(stmt.name.lexeme, value);
+  }
+
+  visitWhileStmt(stmt: WhileStmt): void {
+    while (isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.body);
+    }
   }
 
   private execute(stmt: Stmt) {

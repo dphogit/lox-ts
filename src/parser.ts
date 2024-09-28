@@ -16,6 +16,7 @@ import {
   PrintStmt,
   Stmt,
   VarStmt,
+  WhileStmt,
 } from "./statement";
 import { Token, TokenType } from "./token";
 
@@ -58,10 +59,49 @@ export class Parser {
   }
 
   private statement(): Stmt {
+    if (this.match("FOR")) return this.forStatement();
     if (this.match("IF")) return this.ifStatement();
     if (this.match("PRINT")) return this.printStatement();
+    if (this.match("WHILE")) return this.whileStatement();
     if (this.match("LEFT_BRACE")) return new BlockStmt(this.block());
     return this.expressionStatement();
+  }
+
+  // A for loop can be represented by desugaring a while statement
+  private forStatement(): Stmt {
+    this.consume("LEFT_PAREN", "Expect '(' after 'for'.");
+
+    const initializer = this.match("SEMICOLON")
+      ? null
+      : this.match("VAR")
+        ? this.varDeclaration()
+        : this.expressionStatement();
+
+    // The condition defaults to true if omitted, creating an infinite loop.
+    const condition = this.check("SEMICOLON")
+      ? new LiteralExpr(true)
+      : this.expression();
+    this.consume("SEMICOLON", "Expect ';' after loop condition.");
+
+    const increment = this.check("RIGHT_PAREN") ? null : this.expression();
+    this.consume("RIGHT_PAREN", "Expect ')' after for clauses.");
+
+    let body = this.statement();
+
+    // If there is an increment, we execute it after the existing body.
+    if (increment) {
+      body = new BlockStmt([body, new ExprStmt(increment)]);
+    }
+
+    // Build a primitive while loop
+    body = new WhileStmt(condition, body);
+
+    // If there is an initializer, it runs once before the entire loop body.
+    if (initializer) {
+      body = new BlockStmt([initializer, body]);
+    }
+
+    return body;
   }
 
   private ifStatement(): IfStmt {
@@ -79,6 +119,16 @@ export class Parser {
     const value = this.expression();
     this.consume("SEMICOLON", "Expect ';' after expression.");
     return new PrintStmt(value);
+  }
+
+  private whileStatement(): WhileStmt {
+    this.consume("LEFT_PAREN", "Expect '(' after 'while'.");
+    const condition = this.expression();
+    this.consume("RIGHT_PAREN", "Expect ')' after while condition.");
+
+    const body = this.statement();
+
+    return new WhileStmt(condition, body);
   }
 
   private expressionStatement(): ExprStmt {

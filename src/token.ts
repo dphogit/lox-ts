@@ -29,6 +29,9 @@ export const tokenFactory = {
   createEqualEqual(line: number) {
     return new Token("EQUAL_EQUAL", "==", null, line);
   },
+  createFor(line: number) {
+    return new Token("FOR", "for", null, line);
+  },
   createIf(line: number) {
     return new Token("IF", "if", null, line);
   },
@@ -43,6 +46,9 @@ export const tokenFactory = {
   },
   createLeftParen(line: number) {
     return new Token("LEFT_PAREN", "(", null, line);
+  },
+  createLessThan(line: number) {
+    return new Token("LESS", "<", null, line);
   },
   createMinus(line: number) {
     return new Token("MINUS", "-", null, line);
@@ -82,6 +88,9 @@ export const tokenFactory = {
   },
   createVar(line: number) {
     return new Token("VAR", "var", null, line);
+  },
+  createWhile(line: number) {
+    return new Token("WHILE", "while", null, line);
   },
 };
 
