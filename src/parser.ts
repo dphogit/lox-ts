@@ -2,6 +2,7 @@ import { IErrorReporter, SyntaxError } from "./error";
 import {
   AssignExpr,
   BinaryExpr,
+  CallExpr,
   Expr,
   GroupingExpr,
   LiteralExpr,
@@ -12,13 +13,16 @@ import {
 import {
   BlockStmt,
   ExprStmt,
+  FunctionStmt,
   IfStmt,
   PrintStmt,
+  ReturnStmt,
   Stmt,
   VarStmt,
   WhileStmt,
 } from "./statement";
 import { Token, TokenType } from "./token";
+import { FunctionKind } from "./types";
 
 export class Parser {
   private currentIndex = 0; // Points to current token during parsing
@@ -39,6 +43,7 @@ export class Parser {
 
   private declaration(): Stmt | null {
     try {
+      if (this.match("FUN")) return this.functionDeclaration("function");
       if (this.match("VAR")) return this.varDeclaration();
       return this.statement();
     } catch (error) {
@@ -47,6 +52,28 @@ export class Parser {
       }
       return null;
     }
+  }
+
+  private functionDeclaration(kind: FunctionKind): FunctionStmt {
+    const name = this.consume("IDENTIFIER", `Expect ${kind} name.`);
+    this.consume("LEFT_PAREN", `Expect '(' after ${kind} name.`);
+
+    // Parse parameters of the function
+    const params: Token[] = [];
+    if (!this.check("RIGHT_PAREN")) {
+      do {
+        if (params.length >= 255) {
+          this.error(this.peek(), "Can't have more than 255 parameters");
+        }
+        params.push(this.consume("IDENTIFIER", "Expect parameter name."));
+      } while (this.match("COMMA"));
+    }
+
+    this.consume("RIGHT_PAREN", "Expect ')' after parameters.");
+    this.consume("LEFT_BRACE", `Expect '{' before ${kind} body.`);
+
+    const body = this.block();
+    return new FunctionStmt(name, params, body);
   }
 
   private varDeclaration(): VarStmt {
@@ -62,6 +89,7 @@ export class Parser {
     if (this.match("FOR")) return this.forStatement();
     if (this.match("IF")) return this.ifStatement();
     if (this.match("PRINT")) return this.printStatement();
+    if (this.match("RETURN")) return this.returnStatement();
     if (this.match("WHILE")) return this.whileStatement();
     if (this.match("LEFT_BRACE")) return new BlockStmt(this.block());
     return this.expressionStatement();
@@ -119,6 +147,13 @@ export class Parser {
     const value = this.expression();
     this.consume("SEMICOLON", "Expect ';' after expression.");
     return new PrintStmt(value);
+  }
+
+  private returnStatement(): ReturnStmt {
+    const keyword = this.previous();
+    const value = this.check("SEMICOLON") ? undefined : this.expression();
+    this.consume("SEMICOLON", "Expect ';' after return value.");
+    return new ReturnStmt(keyword, value);
   }
 
   private whileStatement(): WhileStmt {
@@ -221,7 +256,21 @@ export class Parser {
       return new UnaryExpr(operator, right);
     }
 
-    return this.primary();
+    return this.call();
+  }
+
+  private call(): Expr {
+    let expr = this.primary();
+
+    while (true) {
+      if (this.match("LEFT_PAREN")) {
+        expr = this.finishCall(expr);
+      } else {
+        break;
+      }
+    }
+
+    return expr;
   }
 
   private primary(): Expr {
@@ -268,6 +317,9 @@ export class Parser {
     return expr;
   }
 
+  /**
+   * @see leftAssociativeBinaryOperators
+   */
   private leftAssociativeLogicalOperators(
     operand: () => Expr,
     ...types: TokenType[]
@@ -281,6 +333,24 @@ export class Parser {
     }
 
     return expr;
+  }
+
+  private finishCall(callee: Expr): Expr {
+    const args: Expr[] = [];
+
+    // Parse arguments if we don't immediately encounter closing parenthesis.
+    if (!this.check("RIGHT_PAREN")) {
+      do {
+        if (args.length >= 255) {
+          this.error(this.peek(), "Can't have more than 255 arguments.");
+        }
+        args.push(this.expression());
+      } while (this.match("COMMA"));
+    }
+
+    const paren = this.consume("RIGHT_PAREN", "Expect ')' after arguments.");
+
+    return new CallExpr(callee, args, paren);
   }
 
   private match(...types: TokenType[]): boolean {

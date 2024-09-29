@@ -6,6 +6,7 @@ import { Token, tokenFactory } from "../../src/token";
 import {
   BlockStmt,
   ExprStmt,
+  FunctionStmt,
   IfStmt,
   PrintStmt,
   VarStmt,
@@ -310,5 +311,52 @@ describe("Parser class", () => {
 
     expect(plus1Expr.right).toBeInstanceOf(LiteralExpr);
     expect((plus1Expr.right as LiteralExpr).value).toEqual(1);
+  });
+
+  test("function declaration returns correct statements", () => {
+    const parser = createParser([
+      tokenFactory.createFunction(1),
+      tokenFactory.createIdentifier("sum", 1),
+      tokenFactory.createLeftParen(1),
+      tokenFactory.createIdentifier("a", 1),
+      tokenFactory.createComma(1),
+      tokenFactory.createIdentifier("b", 1),
+      tokenFactory.createRightParen(1),
+      tokenFactory.createLeftBrace(1),
+      tokenFactory.createPrint(2),
+      tokenFactory.createIdentifier("a", 2),
+      tokenFactory.createPlus(2),
+      tokenFactory.createIdentifier("b", 2),
+      tokenFactory.createSemiColon(2),
+      tokenFactory.createRightBrace(3),
+      tokenFactory.createEof(3),
+    ]);
+
+    const result = parser.parse();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toBeInstanceOf(FunctionStmt);
+
+    const { name, params, body } = result[0] as FunctionStmt;
+
+    expect(name.lexeme).toEqual("sum");
+
+    expect(params).toHaveLength(2);
+    const [param1, param2] = params;
+    expect(param1.lexeme).toEqual("a");
+    expect(param2.lexeme).toEqual("b");
+
+    expect(body).toHaveLength(1);
+    expect(body[0]).toBeInstanceOf(PrintStmt);
+
+    const { expr } = body[0] as PrintStmt;
+    expect(expr).toBeInstanceOf(BinaryExpr);
+
+    const sumExpr = expr as BinaryExpr;
+    expect(sumExpr.operator.lexeme).toEqual("+");
+    expect(sumExpr.left).toBeInstanceOf(VarExpr);
+    expect((sumExpr.left as VarExpr).name.lexeme).toEqual("a");
+    expect(sumExpr.right).toBeInstanceOf(VarExpr);
+    expect((sumExpr.right as VarExpr).name.lexeme).toEqual("b");
   });
 });

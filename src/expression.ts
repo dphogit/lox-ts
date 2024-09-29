@@ -8,6 +8,7 @@ export abstract class Expr {
 export interface IExprVisitor<R> {
   visitAssignExpr(expr: AssignExpr): R;
   visitBinaryExpr(expr: BinaryExpr): R;
+  visitCallExpr(expr: CallExpr): R;
   visitGroupingExpr(expr: GroupingExpr): R;
   visitLiteralExpr(expr: LiteralExpr): R;
   visitLogicalExpr(expr: LogicalExpr): R;
@@ -39,6 +40,20 @@ export class BinaryExpr extends Expr {
 
   accept<R>(visitor: IExprVisitor<R>): R {
     return visitor.visitBinaryExpr(this);
+  }
+}
+
+export class CallExpr extends Expr {
+  constructor(
+    readonly callee: Expr,
+    readonly args: Expr[],
+    readonly closingParen: Token,
+  ) {
+    super();
+  }
+
+  accept<R>(visitor: IExprVisitor<R>): R {
+    return visitor.visitCallExpr(this);
   }
 }
 

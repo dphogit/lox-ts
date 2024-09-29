@@ -20,6 +20,9 @@ export const tokenFactory = {
   createBang(line: number) {
     return new Token("BANG", "!", null, line);
   },
+  createComma(line: number) {
+    return new Token("COMMA", ",", null, line);
+  },
   createEof(line: number) {
     return new Token("EOF", "", null, line);
   },
@@ -31,6 +34,9 @@ export const tokenFactory = {
   },
   createFor(line: number) {
     return new Token("FOR", "for", null, line);
+  },
+  createFunction(line: number) {
+    return new Token("FUN", "fun", null, line);
   },
   createIf(line: number) {
     return new Token("IF", "if", null, line);
@@ -58,6 +64,9 @@ export const tokenFactory = {
   },
   createOr(line: number) {
     return new Token("OR", "or", null, line);
+  },
+  createReturn(line: number) {
+    return new Token("RETURN", "return", null, line);
   },
   createRightBrace(line: number) {
     return new Token("RIGHT_BRACE", "}", null, line);

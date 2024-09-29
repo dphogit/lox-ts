@@ -1,6 +1,7 @@
 import {
   AssignExpr,
   BinaryExpr,
+  CallExpr,
   Expr,
   GroupingExpr,
   IExprVisitor,
@@ -29,6 +30,10 @@ export class AstFormatter implements IExprFormatter {
 
   visitBinaryExpr(expr: BinaryExpr): string {
     return this.parenthesize(expr.operator.lexeme, expr.left, expr.right);
+  }
+
+  visitCallExpr(expr: CallExpr): string {
+    return this.parenthesize("call", expr.callee, ...expr.args);
   }
 
   visitGroupingExpr(expr: GroupingExpr): string {
@@ -77,6 +82,10 @@ export class RpnFormatter implements IExprFormatter {
 
   visitBinaryExpr(expr: BinaryExpr): string {
     return `${expr.left.accept(this)} ${expr.right.accept(this)} ${expr.operator.lexeme}`;
+  }
+
+  visitCallExpr(expr: CallExpr): string {
+    throw new Error("Not implemented yet.");
   }
 
   visitGroupingExpr(expr: GroupingExpr): string {
