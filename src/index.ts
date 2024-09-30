@@ -6,6 +6,7 @@ import { ErrorReporter } from "./error";
 import { Scanner } from "./scanner";
 import { Parser } from "./parser";
 import { Interpreter } from "./interpreter";
+import { Resolver } from "./resolver";
 
 // https://man.freebsd.org/cgi/man.cgi?query=sysexits
 const EX_USAGE = 64;
@@ -14,6 +15,7 @@ const EX_SOFTWARE = 70;
 
 const errorReporter = new ErrorReporter();
 const interpreter = new Interpreter(errorReporter);
+const resolver = new Resolver(interpreter, errorReporter);
 
 function printUsage() {
   console.log();
@@ -28,6 +30,10 @@ function run(source: string) {
 
   const parser = new Parser(tokens, errorReporter);
   const statements = parser.parse();
+
+  if (errorReporter.hasError()) return;
+
+  resolver.resolve(statements);
 
   if (errorReporter.hasError()) return;
 

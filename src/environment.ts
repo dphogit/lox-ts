@@ -37,6 +37,14 @@ export class Environment {
   }
 
   /**
+   * Assigns the value to the environment at the fixed distance from this one.
+   */
+  assignAt(distance: number, name: Token, value: LoxObject): void {
+    const ancestor = this.ancestor(distance);
+    ancestor.values[name.lexeme] = value;
+  }
+
+  /**
    * Looks up a variable and returns the bounded value at the tightest scope.
    * @throws {RuntimeError} when variable is not found.
    */
@@ -50,5 +58,29 @@ export class Environment {
     }
 
     throw new RuntimeError(name, `Undefined variable '${name.lexeme}'.`);
+  }
+
+  /**
+   * Gets the bouned variable value at the environment of fixed distance
+   */
+  getAt(distance: number, name: string): LoxObject {
+    return this.ancestor(distance).values[name];
+  }
+
+  /**
+   * Walks a fixed number of hops up the parent chain and returns the environment.
+   * @throws {RangeError} when distance exceeds number of ancestor environments.
+   */
+  ancestor(distance: number): Environment {
+    let env: Environment = this;
+    for (let i = 0; i < distance; i++) {
+      if (env.enclosing === null) {
+        throw new RangeError(
+          "Distance exceeds the number of ancestor environments.",
+        );
+      }
+      env = env.enclosing;
+    }
+    return env;
   }
 }

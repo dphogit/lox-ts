@@ -34,8 +34,9 @@ import { LoxCallable, LoxFunction, LoxObject, LoxReturn } from "./types";
 export class Interpreter
   implements IExprVisitor<LoxObject>, IStmtVisitor<void>
 {
-  readonly globals = new Environment(); // Fixed reference to outermost global environment
-  private environment: Environment = this.globals; // Tracks current innermost environment
+  private readonly locals: Map<Expr, number> = new Map(); // Side table to associate syntax tree node with resolved data.
+  private readonly globals = new Environment(); // Fixed reference to outermost global environment.
+  private environment: Environment = this.globals; // Tracks current innermost environment, acts as the closure.
 
   constructor(private errorReporter: IErrorReporter) {
     this.globals.define("clock", new LoxClock());
@@ -55,7 +56,14 @@ export class Interpreter
 
   visitAssignExpr(expr: AssignExpr): LoxObject {
     const value = this.evaluate(expr.value);
-    this.environment.assign(expr.name, value);
+
+    const distance = this.locals.get(expr);
+    if (distance === undefined) {
+      this.globals.assign(expr.name, value);
+    } else {
+      this.environment.assignAt(distance, expr.name, value);
+    }
+
     return value;
   }
 
@@ -191,11 +199,19 @@ export class Interpreter
   }
 
   visitVarExpr(expr: VarExpr): LoxObject {
-    return this.environment.get(expr.name);
+    return this.lookUpVariable(expr.name, expr);
   }
 
   private evaluate(expr: Expr): LoxObject {
     return expr.accept(this);
+  }
+
+  private lookUpVariable(name: Token, expr: Expr): LoxObject {
+    const distance = this.locals.get(expr);
+
+    return distance === undefined
+      ? this.globals.get(name)
+      : this.environment.getAt(distance, name.lexeme);
   }
 
   // ---------- STATEMENTS ----------
@@ -209,7 +225,7 @@ export class Interpreter
   }
 
   visitFunctionStmt(stmt: FunctionStmt): void {
-    const fn = new LoxFunction(stmt);
+    const fn = new LoxFunction(stmt, this.environment);
     this.environment.define(stmt.name.lexeme, fn);
   }
 
@@ -263,6 +279,10 @@ export class Interpreter
     } finally {
       this.environment = previous; // Restore the original environment
     }
+  }
+
+  resolve(expr: Expr, depth: number) {
+    this.locals.set(expr, depth);
   }
 }
 

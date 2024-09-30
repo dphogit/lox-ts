@@ -66,4 +66,41 @@ describe("Environment class", () => {
 
     expect(call).toThrow(RuntimeError);
   });
+
+  test("ancestor of valid distance returns correct environment", () => {
+    const enclosing = new Environment();
+    const environment = new Environment(enclosing);
+
+    const result = environment.ancestor(1);
+
+    expect(result).toBe(enclosing);
+  });
+
+  test("ancestor access with invalid distance throws range error", () => {
+    const environment = new Environment();
+
+    const call = () => environment.ancestor(1);
+
+    expect(call).toThrow(RangeError);
+  });
+
+  test("getAt returns variable from correct ancestor environment", () => {
+    const enclosing = new Environment();
+    enclosing.define("x", 10);
+    const environment = new Environment(enclosing);
+
+    const result = environment.getAt(1, "x");
+
+    expect(result).toEqual(10);
+  });
+
+  test("assignAt updates variable in correct ancestor environment", () => {
+    const enclosing = new Environment();
+    enclosing.define("x", 10);
+    const environment = new Environment(enclosing);
+
+    environment.assignAt(1, tokenFactory.createIdentifier("x", 1), 11);
+
+    expect(environment.getAt(1, "x")).toEqual(11);
+  });
 });

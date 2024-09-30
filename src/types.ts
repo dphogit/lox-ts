@@ -12,15 +12,18 @@ export abstract class LoxCallable {
 }
 
 export class LoxFunction extends LoxCallable {
-  constructor(private declaration: FunctionStmt) {
+  constructor(
+    private declaration: FunctionStmt,
+    private closure: Environment,
+  ) {
     super();
   }
 
   arity = () => this.declaration.params.length;
 
   call(interpreter: Interpreter, args: LoxObject[]): LoxObject {
-    // Each function call gets its own env to encapsulate its parameters.
-    const environment = new Environment(interpreter.globals);
+    // Each fn call has it's own closure environment to encapsulate its params.
+    const environment = new Environment(this.closure);
 
     for (let i = 0; i < this.declaration.params.length; i++) {
       environment.define(this.declaration.params[i].lexeme, args[i]);
@@ -40,8 +43,6 @@ export class LoxFunction extends LoxCallable {
   toString = () => `<fn ${this.declaration.name.lexeme}>`;
 }
 
-export class LoxReturn extends Error {
-  constructor(readonly value: LoxObject) {
-    super();
-  }
+export class LoxReturn {
+  constructor(readonly value: LoxObject) {}
 }

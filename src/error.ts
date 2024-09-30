@@ -33,7 +33,7 @@ export class ErrorReporter implements IErrorReporter {
       return;
     }
 
-    // error is SyntaxError
+    // error is SyntaxError (or ResolvingError)
     if (error.where === undefined) {
       console.error(`[line ${error.line}] Error: ${error.message}`);
     } else {
@@ -55,6 +55,8 @@ export class SyntaxError extends Error {
     super(message);
   }
 }
+
+export class ResolvingError extends SyntaxError {}
 
 export class RuntimeError extends Error {
   constructor(
