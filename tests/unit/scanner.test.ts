@@ -116,6 +116,27 @@ describe("Scanner class", () => {
     ]);
   });
 
+  test("class declaration returns correct tokens", () => {
+    const source = "class MyClass { myMethod() {} }";
+    const scanner = new Scanner(source, errorReporter);
+
+    const tokens = scanner.scanTokens();
+
+    expect(tokens).toHaveLength(10);
+    expect(tokens).toStrictEqual([
+      tokenFactory.createClass(1),
+      tokenFactory.createIdentifier("MyClass", 1),
+      tokenFactory.createLeftBrace(1),
+      tokenFactory.createIdentifier("myMethod", 1),
+      tokenFactory.createLeftParen(1),
+      tokenFactory.createRightParen(1),
+      tokenFactory.createLeftBrace(1),
+      tokenFactory.createRightBrace(1),
+      tokenFactory.createRightBrace(1),
+      tokenFactory.createEof(1),
+    ]);
+  });
+
   test("inline comment is ignored", () => {
     const source = "// Inline comments are ignored";
     const scanner = new Scanner(source, errorReporter);

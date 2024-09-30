@@ -14,6 +14,7 @@ import {
 import { Interpreter } from "./interpreter";
 import {
   BlockStmt,
+  ClassStmt,
   ExprStmt,
   FunctionStmt,
   IfStmt,
@@ -126,6 +127,11 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
     this.beginScope();
     this.resolve(stmt.statements);
     this.endScope();
+  }
+
+  visitClassStmt(stmt: ClassStmt): void {
+    this.declare(stmt.name);
+    this.define(stmt.name);
   }
 
   visitExprStmt(stmt: ExprStmt): void {

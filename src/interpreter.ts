@@ -15,6 +15,7 @@ import {
 import { LoxClock } from "./native";
 import {
   BlockStmt,
+  ClassStmt,
   ExprStmt,
   FunctionStmt,
   IfStmt,
@@ -26,7 +27,13 @@ import {
   WhileStmt,
 } from "./statement";
 import { Token } from "./token";
-import { LoxCallable, LoxFunction, LoxObject, LoxReturn } from "./types";
+import {
+  LoxCallable,
+  LoxClass,
+  LoxFunction,
+  LoxObject,
+  LoxReturn,
+} from "./types";
 
 /**
  * Evaluates and computes values for provided expressions.
@@ -218,6 +225,12 @@ export class Interpreter
 
   visitBlockStmt(stmt: BlockStmt): void {
     this.executeBlock(stmt.statements, new Environment(this.environment));
+  }
+
+  visitClassStmt(stmt: ClassStmt): void {
+    this.environment.define(stmt.name.lexeme, null);
+    const klass = new LoxClass(stmt.name.lexeme);
+    this.environment.assign(stmt.name, klass);
   }
 
   visitExprStmt(stmt: ExprStmt): void {

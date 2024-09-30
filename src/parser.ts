@@ -12,6 +12,7 @@ import {
 } from "./expression";
 import {
   BlockStmt,
+  ClassStmt,
   ExprStmt,
   FunctionStmt,
   IfStmt,
@@ -43,6 +44,7 @@ export class Parser {
 
   private declaration(): Stmt | null {
     try {
+      if (this.match("CLASS")) return this.classDeclaration();
       if (this.match("FUN")) return this.functionDeclaration("function");
       if (this.match("VAR")) return this.varDeclaration();
       return this.statement();
@@ -52,6 +54,19 @@ export class Parser {
       }
       return null;
     }
+  }
+
+  private classDeclaration(): ClassStmt {
+    const name = this.consume("IDENTIFIER", "Expect class name.");
+    this.consume("LEFT_BRACE", "Expect '{' before class body.");
+
+    const methods = [];
+    while (!this.check("RIGHT_BRACE") && !this.isAtEnd()) {
+      methods.push(this.functionDeclaration("method"));
+    }
+
+    this.consume("RIGHT_BRACE", "Expect '}' after class body.");
+    return new ClassStmt(name, methods);
   }
 
   private functionDeclaration(kind: FunctionKind): FunctionStmt {

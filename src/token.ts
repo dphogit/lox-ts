@@ -20,6 +20,9 @@ export const tokenFactory = {
   createBang(line: number) {
     return new Token("BANG", "!", null, line);
   },
+  createClass(line: number) {
+    return new Token("CLASS", "class", null, line);
+  },
   createComma(line: number) {
     return new Token("COMMA", ",", null, line);
   },

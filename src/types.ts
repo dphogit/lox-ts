@@ -2,9 +2,15 @@ import { Environment } from "./environment";
 import { Interpreter } from "./interpreter";
 import { FunctionStmt } from "./statement";
 
-export type LoxObject = string | number | boolean | null | LoxCallable;
+export type LoxObject =
+  | string
+  | number
+  | boolean
+  | null
+  | LoxCallable
+  | LoxClass;
 
-export type FunctionKind = "function";
+export type FunctionKind = "function" | "method";
 
 export abstract class LoxCallable {
   abstract arity(): number;
@@ -45,4 +51,10 @@ export class LoxFunction extends LoxCallable {
 
 export class LoxReturn {
   constructor(readonly value: LoxObject) {}
+}
+
+export class LoxClass {
+  constructor(readonly name: string) {}
+
+  toString = () => this.name;
 }

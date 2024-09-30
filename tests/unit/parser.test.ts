@@ -5,6 +5,7 @@ import { ErrorReporter } from "../../src/error";
 import { Token, tokenFactory } from "../../src/token";
 import {
   BlockStmt,
+  ClassStmt,
   ExprStmt,
   FunctionStmt,
   IfStmt,
@@ -358,5 +359,35 @@ describe("Parser class", () => {
     expect((sumExpr.left as VarExpr).name.lexeme).toEqual("a");
     expect(sumExpr.right).toBeInstanceOf(VarExpr);
     expect((sumExpr.right as VarExpr).name.lexeme).toEqual("b");
+  });
+
+  test("class declaration returns correct statements", () => {
+    const parser = createParser([
+      tokenFactory.createClass(1),
+      tokenFactory.createIdentifier("MyClass", 1),
+      tokenFactory.createLeftBrace(1),
+      tokenFactory.createIdentifier("myMethod", 1),
+      tokenFactory.createLeftParen(1),
+      tokenFactory.createRightParen(1),
+      tokenFactory.createLeftBrace(1),
+      tokenFactory.createRightBrace(1),
+      tokenFactory.createRightBrace(1),
+      tokenFactory.createEof(1),
+    ]);
+
+    const result = parser.parse();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toBeInstanceOf(ClassStmt);
+
+    const { name, methods } = result[0] as ClassStmt;
+
+    expect(name.lexeme).toEqual("MyClass");
+
+    expect(methods).toHaveLength(1);
+    const { name: fnName, params, body } = methods[0];
+    expect(fnName.lexeme).toEqual("myMethod");
+    expect(params).toHaveLength(0);
+    expect(body).toHaveLength(0);
   });
 });
