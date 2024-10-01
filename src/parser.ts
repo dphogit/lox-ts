@@ -4,9 +4,11 @@ import {
   BinaryExpr,
   CallExpr,
   Expr,
+  GetExpr,
   GroupingExpr,
   LiteralExpr,
   LogicalExpr,
+  SetExpr,
   UnaryExpr,
   VarExpr,
 } from "./expression";
@@ -216,6 +218,10 @@ export class Parser {
         return new AssignExpr(expr.name, value);
       }
 
+      if (expr instanceof GetExpr) {
+        return new SetExpr(expr.obj, expr.name, value);
+      }
+
       this.error(equalsToken, "Invalid assignment target.");
     }
 
@@ -280,6 +286,12 @@ export class Parser {
     while (true) {
       if (this.match("LEFT_PAREN")) {
         expr = this.finishCall(expr);
+      } else if (this.match("DOT")) {
+        const name = this.consume(
+          "IDENTIFIER",
+          "Expect property name after '.'.",
+        );
+        expr = new GetExpr(expr, name);
       } else {
         break;
       }

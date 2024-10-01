@@ -4,10 +4,12 @@ import {
   BinaryExpr,
   CallExpr,
   Expr,
+  GetExpr,
   GroupingExpr,
   IExprVisitor,
   LiteralExpr,
   LogicalExpr,
+  SetExpr,
   UnaryExpr,
   VarExpr,
 } from "./expression";
@@ -27,7 +29,7 @@ import {
 } from "./statement";
 import { Token } from "./token";
 
-type FunctionType = "NONE" | "FUNCTION";
+type FunctionType = "NONE" | "FUNCTION" | "METHOD";
 
 /**
  * A block scope where keys are the variable names, mapping to a boolean value
@@ -89,6 +91,10 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
     }
   }
 
+  visitGetExpr(expr: GetExpr): void {
+    this.resolve(expr.obj);
+  }
+
   visitGroupingExpr(expr: GroupingExpr): void {
     this.resolve(expr.expression);
   }
@@ -99,6 +105,11 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
   }
 
   visitLiteralExpr(_: LiteralExpr): void {}
+
+  visitSetExpr(expr: SetExpr): void {
+    this.resolve(expr.value);
+    this.resolve(expr.obj);
+  }
 
   visitUnaryExpr(expr: UnaryExpr): void {
     this.resolve(expr.right);
@@ -132,6 +143,11 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
   visitClassStmt(stmt: ClassStmt): void {
     this.declare(stmt.name);
     this.define(stmt.name);
+
+    for (const method of stmt.methods) {
+      const declaration: FunctionType = "METHOD";
+      this.resolveFunction(method, declaration);
+    }
   }
 
   visitExprStmt(stmt: ExprStmt): void {

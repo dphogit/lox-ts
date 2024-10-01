@@ -1,6 +1,8 @@
 import { Environment } from "./environment";
+import { RuntimeError } from "./error";
 import { Interpreter } from "./interpreter";
 import { FunctionStmt } from "./statement";
+import { Token } from "./token";
 
 export type LoxObject =
   | string
@@ -8,7 +10,8 @@ export type LoxObject =
   | boolean
   | null
   | LoxCallable
-  | LoxClass;
+  | LoxClass
+  | LoxInstance;
 
 export type FunctionKind = "function" | "method";
 
@@ -53,8 +56,50 @@ export class LoxReturn {
   constructor(readonly value: LoxObject) {}
 }
 
-export class LoxClass {
-  constructor(readonly name: string) {}
+export class LoxClass extends LoxCallable {
+  constructor(
+    readonly name: string,
+    private readonly methods: Record<string, LoxFunction> = {}, // Methods are keyed by their names
+  ) {
+    super();
+  }
+
+  arity(): number {
+    return 0;
+  }
+
+  call(interpreter: Interpreter, args: LoxObject[]): LoxObject {
+    const instance = new LoxInstance(this);
+    return instance;
+  }
+
+  findMethod(name: string): LoxFunction | null {
+    return this.methods.hasOwnProperty(name) ? this.methods[name] : null;
+  }
 
   toString = () => this.name;
+}
+
+export class LoxInstance {
+  // Maps property names to corresponding property values
+  private readonly fields: Record<string, LoxObject> = {};
+
+  constructor(private klass: LoxClass) {}
+
+  get(name: Token): LoxObject {
+    if (this.fields.hasOwnProperty(name.lexeme)) {
+      return this.fields[name.lexeme];
+    }
+
+    const method = this.klass.findMethod(name.lexeme);
+    if (method) return method;
+
+    throw new RuntimeError(name, `Undefined property '${name.lexeme}'`);
+  }
+
+  set(name: Token, value: LoxObject) {
+    this.fields[name.lexeme] = value;
+  }
+
+  toString = () => `${this.klass.name} instance`;
 }
