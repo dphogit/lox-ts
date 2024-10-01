@@ -11,6 +11,7 @@ import {
   LiteralExpr,
   LogicalExpr,
   SetExpr,
+  SuperExpr,
   ThisExpr,
   UnaryExpr,
   VarExpr,
@@ -216,6 +217,28 @@ export class Interpreter
     return value;
   }
 
+  visitSuperExpr(expr: SuperExpr): LoxObject {
+    const distance = this.locals.get(expr);
+
+    if (!distance) {
+      throw new RuntimeError(expr.keyword, "Could not find 'super' AST node.");
+    }
+
+    const superclass = this.environment.getAt(distance, "super") as LoxClass;
+    const obj = this.environment.getAt(distance - 1, "this") as LoxInstance;
+
+    const method = superclass.findMethod(expr.method.lexeme);
+
+    if (!method) {
+      throw new RuntimeError(
+        expr.method,
+        `Undefined property ${expr.method.lexeme}.`,
+      );
+    }
+
+    return method.bindInstance(obj);
+  }
+
   visitThisExpr(expr: ThisExpr): LoxObject {
     return this.lookUpVariable(expr.keyword, expr);
   }
@@ -259,7 +282,26 @@ export class Interpreter
   }
 
   visitClassStmt(stmt: ClassStmt): void {
+    let superClass: LoxClass | undefined;
+    if (stmt.superClass) {
+      const result = this.evaluate(stmt.superClass);
+
+      if (!(result instanceof LoxClass)) {
+        throw new RuntimeError(
+          stmt.superClass.name,
+          "Superclass must be a class.",
+        );
+      }
+
+      superClass = result;
+    }
+
     this.environment.define(stmt.name.lexeme, null);
+
+    if (stmt.superClass && superClass) {
+      this.environment = new Environment(this.environment);
+      this.environment.define("super", superClass);
+    }
 
     const methods: Record<string, LoxFunction> = {};
     for (const method of stmt.methods) {
@@ -268,7 +310,12 @@ export class Interpreter
       methods[method.name.lexeme] = fn;
     }
 
-    const klass = new LoxClass(stmt.name.lexeme, methods);
+    const klass = new LoxClass(stmt.name.lexeme, superClass, methods);
+
+    if (superClass) {
+      this.environment = this.environment.ancestor(1);
+    }
+
     this.environment.assign(stmt.name, klass);
   }
 

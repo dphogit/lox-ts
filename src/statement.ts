@@ -1,4 +1,4 @@
-import { Expr } from "./expression";
+import { Expr, VarExpr } from "./expression";
 import { Token } from "./token";
 
 export abstract class Stmt {
@@ -31,6 +31,7 @@ export class ClassStmt extends Stmt {
   constructor(
     readonly name: Token,
     readonly methods: FunctionStmt[],
+    readonly superClass?: VarExpr,
   ) {
     super();
   }

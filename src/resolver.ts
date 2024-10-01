@@ -10,6 +10,7 @@ import {
   LiteralExpr,
   LogicalExpr,
   SetExpr,
+  SuperExpr,
   ThisExpr,
   UnaryExpr,
   VarExpr,
@@ -31,7 +32,7 @@ import {
 import { Token } from "./token";
 
 type FunctionType = "NONE" | "FUNCTION" | "INITALIZER" | "METHOD";
-type ClassType = "NONE" | "CLASS";
+type ClassType = "NONE" | "CLASS" | "SUBCLASS";
 
 /**
  * A block scope where keys are the variable names, mapping to a boolean value
@@ -114,6 +115,19 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
     this.resolve(expr.obj);
   }
 
+  visitSuperExpr(expr: SuperExpr): void {
+    if (this.currentClass === "NONE") {
+      this.error("Can't use 'super' outside of a class.", expr.keyword.line);
+    } else if (this.currentClass !== "SUBCLASS") {
+      this.error(
+        "Can't use 'super' in a class with no superclass.",
+        expr.keyword.line,
+      );
+    }
+
+    this.resolveLocal(expr, expr.keyword);
+  }
+
   visitThisExpr(expr: ThisExpr): void {
     if (this.currentClass === "NONE") {
       this.error("Can't use 'this' outside of a class.", expr.keyword.line);
@@ -159,6 +173,20 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
     this.declare(stmt.name);
     this.define(stmt.name);
 
+    if (stmt.superClass?.name.lexeme === stmt.name.lexeme) {
+      this.error("A class can't inherit from itself.", stmt.name.line);
+    }
+
+    if (stmt.superClass) {
+      this.currentClass = "SUBCLASS";
+      this.resolve(stmt.superClass);
+    }
+
+    if (stmt.superClass) {
+      this.beginScope();
+      this.scopes.peek()["super"] = true;
+    }
+
     this.beginScope();
     this.scopes.peek()["this"] = true;
 
@@ -166,6 +194,10 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
       const declaration: FunctionType =
         method.name.lexeme === "init" ? "INITALIZER" : "METHOD";
       this.resolveFunction(method, declaration);
+    }
+
+    if (stmt.superClass) {
+      this.endScope();
     }
 
     this.endScope();

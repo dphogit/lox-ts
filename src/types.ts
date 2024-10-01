@@ -76,6 +76,7 @@ export class LoxReturn {
 export class LoxClass extends LoxCallable {
   constructor(
     readonly name: string,
+    readonly superClass?: LoxClass,
     private readonly methods: Record<string, LoxFunction> = {}, // Methods are keyed by their names
   ) {
     super();
@@ -99,7 +100,16 @@ export class LoxClass extends LoxCallable {
   }
 
   findMethod(name: string): LoxFunction | null {
-    return this.methods.hasOwnProperty(name) ? this.methods[name] : null;
+    if (this.methods.hasOwnProperty(name)) {
+      return this.methods[name];
+    }
+
+    // Recursively look up the class hierarchy for the method.
+    if (this.superClass) {
+      return this.superClass.findMethod(name);
+    }
+
+    return null;
   }
 
   toString = () => this.name;
