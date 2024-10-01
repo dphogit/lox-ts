@@ -1,0 +1,91 @@
+/*
+  This program demonstrates most of the features implemented in Lox.
+
+  Author: Dean Phommahaxay
+  Date: 10th Oct 2024
+*/
+
+var PI = 3.14;
+
+// See how we can pass any shape. This allows for polymorphism-like behaviour!
+fun printCircumference(shape) {
+  if (shape.type == "circle") {
+    print "Circumference: " + shape.perimeter();
+  } else {
+    print shape.type + " does not have a circumference!";
+  }
+}
+
+// Lox supports basic classes and inheritance.
+class Shape2D {
+  init() {
+    this.dimension = 2;
+  }
+
+  area() {
+    return "Area is the amount of space within the perimeter of a shape.";
+  }
+
+  perimeter() {
+    return "Perimeter is defined as the total length of the shapes boundary.";
+  }
+}
+
+class Square < Shape2D {
+  init(x) {
+    super.init();
+    this.x = x;
+    this.type = "square";
+  }
+
+  area() {
+    return this.x * this.x;
+  }
+
+  perimeter() {
+    return 4 * this.x;
+  }
+}
+
+class Circle < Shape2D {
+  init(r) {
+    super.init();
+    this.r = r;
+    this.type = "circle";
+  }
+
+  area() {
+    return this.r * this.r * PI;
+  }
+
+  perimeter() {
+    return 2 * PI * this.r;
+  }
+}
+
+// --- Start Program ---
+
+var shape = Shape2D();
+var square = Square(10);
+var circle = Circle(5);
+
+print "--- Shape Facts! ---";
+print shape.area();
+print shape.perimeter();
+
+print "";
+print "--- [Square] ---";
+print "Is a " + square.dimension + "D shape";
+print "Side Length: " + square.x;
+print "Area: " + square.area();
+print "Perimeter: " + square.perimeter();
+printCircumference(square);
+
+print "";
+print "--- (Circle) ---";
+print "Is a " + circle.dimension + "D shape";
+print "Radius: " + circle.r;
+print "Area: " + circle.area();
+print "Perimeter: " + circle.perimeter();
+printCircumference(circle);
+print "";

@@ -1,0 +1,43 @@
+/* Naive recursive implementation of fib */
+fun fib(n) {
+  if (n <= 1) {
+    return n;
+  }
+
+  return fib(n - 1) + fib(n - 2);
+}
+
+
+print("----- Naive implementation -----");
+var start = clock();
+for (var i = 0; i < 20; i = i + 1) {
+  print("f(" + i + ") => " + fib(i));
+}
+var end = clock();
+print("Took " + (end - start) + " seconds.");
+
+/* O(n) time and O(1) space implementation of fib */
+fun fib2(n) {
+  if (n <= 1) {
+      return n;
+  }
+
+  var a = 0;
+  var b = 1;
+
+  for (var i = 2; i < n + 1; i = i + 1) {
+    var temp = a + b;
+    a = b;
+    b = temp;
+  }
+
+  return b;
+}
+
+print("----- Improved implementation -----");
+start = clock();
+for (var i = 0; i < 20; i = i + 1) {
+  print("f(" + i + ") => " + fib2(i));
+}
+end = clock();
+print("Took " + (end - start) + " seconds.");
