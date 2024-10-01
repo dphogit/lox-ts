@@ -11,6 +11,7 @@ import {
   LiteralExpr,
   LogicalExpr,
   SetExpr,
+  ThisExpr,
   UnaryExpr,
   VarExpr,
 } from "./expression";
@@ -215,6 +216,10 @@ export class Interpreter
     return value;
   }
 
+  visitThisExpr(expr: ThisExpr): LoxObject {
+    return this.lookUpVariable(expr.keyword, expr);
+  }
+
   visitUnaryExpr(expr: UnaryExpr): LoxObject {
     const right = this.evaluate(expr.right);
     const optr = expr.operator;
@@ -258,7 +263,8 @@ export class Interpreter
 
     const methods: Record<string, LoxFunction> = {};
     for (const method of stmt.methods) {
-      const fn = new LoxFunction(method, this.environment);
+      const isInit = method.name.lexeme === "init";
+      const fn = new LoxFunction(method, this.environment, isInit);
       methods[method.name.lexeme] = fn;
     }
 

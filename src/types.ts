@@ -24,6 +24,7 @@ export class LoxFunction extends LoxCallable {
   constructor(
     private declaration: FunctionStmt,
     private closure: Environment,
+    private isInitializer: boolean = false,
   ) {
     super();
   }
@@ -42,14 +43,30 @@ export class LoxFunction extends LoxCallable {
     try {
       interpreter.executeBlock(this.declaration.body, environment);
     } catch (caught) {
-      if (caught instanceof LoxReturn) return caught.value;
+      if (caught instanceof LoxReturn) {
+        if (this.isInitializer) return this.forceReturnThis();
+        return caught.value;
+      }
     }
+
+    // If called function is initializer, forcibly return `this`.
+    if (this.isInitializer) return this.forceReturnThis();
 
     // Implicitly returns 'nil' if we don't hit a return statement.
     return null;
   }
 
+  bindInstance(instance: LoxInstance) {
+    const environment = new Environment(this.closure);
+    environment.define("this", instance);
+    return new LoxFunction(this.declaration, environment, this.isInitializer);
+  }
+
   toString = () => `<fn ${this.declaration.name.lexeme}>`;
+
+  private forceReturnThis(): LoxObject {
+    return this.closure.getAt(0, "this");
+  }
 }
 
 export class LoxReturn {
@@ -65,11 +82,19 @@ export class LoxClass extends LoxCallable {
   }
 
   arity(): number {
-    return 0;
+    const initializer = this.findMethod("init");
+    return initializer ? initializer.arity() : 0;
   }
 
   call(interpreter: Interpreter, args: LoxObject[]): LoxObject {
     const instance = new LoxInstance(this);
+
+    // Constructor
+    const initializer = this.findMethod("init");
+    if (initializer) {
+      initializer.bindInstance(instance).call(interpreter, args);
+    }
+
     return instance;
   }
 
@@ -92,7 +117,7 @@ export class LoxInstance {
     }
 
     const method = this.klass.findMethod(name.lexeme);
-    if (method) return method;
+    if (method) return method.bindInstance(this);
 
     throw new RuntimeError(name, `Undefined property '${name.lexeme}'`);
   }

@@ -14,6 +14,7 @@ export interface IExprVisitor<R> {
   visitLiteralExpr(expr: LiteralExpr): R;
   visitLogicalExpr(expr: LogicalExpr): R;
   visitSetExpr(expr: SetExpr): R;
+  visitThisExpr(expr: ThisExpr): R;
   visitUnaryExpr(expr: UnaryExpr): R;
   visitVarExpr(expr: VarExpr): R;
 }
@@ -117,6 +118,16 @@ export class SetExpr extends Expr {
 
   accept<R>(visitor: IExprVisitor<R>): R {
     return visitor.visitSetExpr(this);
+  }
+}
+
+export class ThisExpr extends Expr {
+  constructor(readonly keyword: Token) {
+    super();
+  }
+
+  accept<R>(visitor: IExprVisitor<R>): R {
+    return visitor.visitThisExpr(this);
   }
 }
 

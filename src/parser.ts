@@ -9,6 +9,7 @@ import {
   LiteralExpr,
   LogicalExpr,
   SetExpr,
+  ThisExpr,
   UnaryExpr,
   VarExpr,
 } from "./expression";
@@ -307,6 +308,10 @@ export class Parser {
 
     if (this.match("NUMBER", "STRING")) {
       return new LiteralExpr(this.previous().literal);
+    }
+
+    if (this.match("THIS")) {
+      return new ThisExpr(this.previous());
     }
 
     if (this.match("IDENTIFIER")) {

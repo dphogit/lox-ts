@@ -10,6 +10,7 @@ import {
   LiteralExpr,
   LogicalExpr,
   SetExpr,
+  ThisExpr,
   UnaryExpr,
   VarExpr,
 } from "./expression";
@@ -29,7 +30,8 @@ import {
 } from "./statement";
 import { Token } from "./token";
 
-type FunctionType = "NONE" | "FUNCTION" | "METHOD";
+type FunctionType = "NONE" | "FUNCTION" | "INITALIZER" | "METHOD";
+type ClassType = "NONE" | "CLASS";
 
 /**
  * A block scope where keys are the variable names, mapping to a boolean value
@@ -54,7 +56,8 @@ class ScopeStack extends Array<Scope> {
 
 export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
   private readonly scopes: ScopeStack = new ScopeStack();
-  private currentFunction: FunctionType = "NONE"; // Tracks if currently visting a function declaration.
+  private currentFunction: FunctionType = "NONE"; // Tracks if currently inside a function declaration.
+  private currentClass: ClassType = "NONE"; // Tracks if currently inside a class declaration.
 
   constructor(
     private readonly interpreter: Interpreter,
@@ -111,6 +114,15 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
     this.resolve(expr.obj);
   }
 
+  visitThisExpr(expr: ThisExpr): void {
+    if (this.currentClass === "NONE") {
+      this.error("Can't use 'this' outside of a class.", expr.keyword.line);
+      return;
+    }
+
+    this.resolveLocal(expr, expr.keyword);
+  }
+
   visitUnaryExpr(expr: UnaryExpr): void {
     this.resolve(expr.right);
   }
@@ -141,13 +153,23 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
   }
 
   visitClassStmt(stmt: ClassStmt): void {
+    const enclosingClass = this.currentClass;
+    this.currentClass = "CLASS";
+
     this.declare(stmt.name);
     this.define(stmt.name);
 
+    this.beginScope();
+    this.scopes.peek()["this"] = true;
+
     for (const method of stmt.methods) {
-      const declaration: FunctionType = "METHOD";
+      const declaration: FunctionType =
+        method.name.lexeme === "init" ? "INITALIZER" : "METHOD";
       this.resolveFunction(method, declaration);
     }
+
+    this.endScope();
+    this.currentClass = enclosingClass;
   }
 
   visitExprStmt(stmt: ExprStmt): void {
@@ -175,7 +197,15 @@ export class Resolver implements IExprVisitor<void>, IStmtVisitor<void> {
       this.error("Can't return from top-level code.", stmt.keyword.line);
     }
 
-    if (stmt.value) this.resolve(stmt.value);
+    if (!stmt.value) {
+      return;
+    }
+
+    if (this.currentFunction === "INITALIZER") {
+      this.error("Can't return from an initializer.", stmt.keyword.line);
+    }
+
+    this.resolve(stmt.value);
   }
 
   visitVarStmt(stmt: VarStmt): void {
